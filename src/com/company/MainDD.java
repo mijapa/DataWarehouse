@@ -108,7 +108,7 @@ public class MainDD {
 
         writer = new BufferedWriter(new FileWriter("sprzedaz.csv", true));
         writer.append("id_sprzedazy,id_sklepu,data,rodzaj\n");
-        for (int i = 20000000; i < 20000000 + 25000000; i++) {
+        for (int i = 20000000; i < 20000000 + 15000000; i++) {
             writer.append(String.valueOf(i));
             writer.append(",");
 
@@ -136,7 +136,7 @@ public class MainDD {
 
         writer = new BufferedWriter(new FileWriter("zakup_produkt.csv", true));
         writer.append("id_produktu,id_sprzedazy,ilosc\n");
-        for (int i = 5000, j = 20000000; j < 20000000 + 25000000; i++, j++) {
+        for (int i = 5000, j = 20000000; j < 20000000 + 15000000; i++, j++) {
             if (i == 15000) {
                 i = 5000;
             }
@@ -152,11 +152,11 @@ public class MainDD {
 
         writer = new BufferedWriter(new FileWriter("reklamacja.csv", true));
         writer.append("id_produktu,id_sprzedazy,data,ilosc\n");
-        for (int i = 5000, j = 20000000; j < 20000000 + 25000000; i++, j++) {
+        for (int i = 5000, j = 20000000; j < 20000000 + 15000000; i++, j++) {
             if (i == 15000) {
                 i = 5000;
             }
-            if (i % 3 == 0) {
+            if (i % 5 == 0) {
                 writer.append(String.valueOf(i));
                 writer.append(",");
                 writer.append(String.valueOf(j));
