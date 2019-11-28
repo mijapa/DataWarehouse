@@ -87,8 +87,9 @@ CREATE TABLE "forma_ekspozycji_WYMIAR"
 
 CREATE TABLE "przedzial_cenowy_WYMIAR"
 (
-    "id_przedzialu_cenowego" numeric GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) NOT NULL PRIMARY KEY,
-    "nazwa"                  varchar2(100)                                                      NOT NULL
+    "id_przedzialu_cenowego"   numeric GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) NOT NULL PRIMARY KEY,
+    "start_przedzialu_zawiera" numeric                                                            NOT NULL,
+    "koniec_przedzialu"        numeric                                                            NOT NULL
 );
 
 CREATE TABLE "sposob_platnosci_WYMIAR"

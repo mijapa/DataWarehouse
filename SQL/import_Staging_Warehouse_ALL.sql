@@ -60,7 +60,15 @@ begin
         VALUES (pp."data_rozpoczecia", pp."data_zakonczenia", pp."procentowa_wysokosc_rabatu");
     COMMIT;
 
-
+    MERGE INTO "WHOUSE"."przedzial_cenowy_WYMIAR" pc
+    USING (SELECT distinct (round(STAGINGAREA."produkt"."cena" / 10) * 10 - 5) od,
+                           (round(STAGINGAREA."produkt"."cena" / 10) * 10 + 5) do
+           from STAGINGAREA."produkt") pr
+    on (pc."start_przedzialu_zawiera" = pr.od and pc."koniec_przedzialu" = pr.do)
+    WHEN NOT MATCHED THEN
+        INSERT ("start_przedzialu_zawiera", "koniec_przedzialu")
+        VALUES (pr.od, pr.do);
+    COMMIT;
 
 end;
 /
