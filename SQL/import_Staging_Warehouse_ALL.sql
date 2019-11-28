@@ -32,6 +32,22 @@ begin
         INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
         VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
     COMMIT;
+
+    insert into WHOUSE."forma_ekspozycji_WYMIAR" ("id_formy_ekspozycji", "nazwa")
+    SELECT "id_ekspozycji", "nazwa_formy_ekspozycji"
+    from STAGINGAREA."ekspozycja";
+    commit;
+
+    MERGE INTO "WHOUSE"."sposob_platnosci_WYMIAR" s
+    USING (SELECT distinct "transakcja"."rodzaj_platnosci" r
+           FROM "STAGINGAREA"."transakcja") w
+    on (s."rodzaj" = t.r)
+    WHEN NOT MATCHED THEN
+        INSERT ("rodzaj")
+        VALUES (t.r);
+    COMMIT;
+
+
 end;
 /
 
