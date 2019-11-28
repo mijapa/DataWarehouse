@@ -1,5 +1,5 @@
-# GeneratorCSV
-Data Warehouse Student Project
+# Data Warehouse
+Electronics and household appliances Data Warehouse Student Project
 
 Generating fake data for source databases in Java.
 Creating Staging Area.
