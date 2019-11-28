@@ -39,13 +39,27 @@ begin
     commit;
 
     MERGE INTO "WHOUSE"."sposob_platnosci_WYMIAR" s
-    USING (SELECT distinct "transakcja"."rodzaj_platnosci" r
-           FROM "STAGINGAREA"."transakcja") w
-    on (s."rodzaj" = t.r)
+    USING (SELECT distinct "transakcja"."rodzaj_platnosci"
+           FROM "STAGINGAREA"."transakcja") t
+    on (s."rodzaj" = t."rodzaj_platnosci")
     WHEN NOT MATCHED THEN
         INSERT ("rodzaj")
-        VALUES (t.r);
+        VALUES (t."rodzaj_platnosci");
     COMMIT;
+
+    MERGE INTO "WHOUSE"."promocja_WYMIAR" p
+    USING (SELECT distinct "produkt_promocja"."data_rozpoczecia",
+                           "produkt_promocja"."data_zakonczenia",
+                           "promocja"."procentowa_wysokosc_rabatu"
+           from STAGINGAREA."produkt_promocja"
+                    natural join STAGINGAREA."promocja") pp
+    on (p."data_rozpoczecia" = pp."data_rozpoczecia" and p."data_zakonczenia" = pp."data_zakonczenia"
+        and p."procentowa_wysokosc_rabatu" = pp."procentowa_wysokosc_rabatu")
+    WHEN NOT MATCHED THEN
+        INSERT ("data_rozpoczecia", "data_zakonczenia", "procentowa_wysokosc_rabatu")
+        VALUES (pp."data_rozpoczecia", pp."data_zakonczenia", pp."procentowa_wysokosc_rabatu");
+    COMMIT;
+
 
 
 end;
