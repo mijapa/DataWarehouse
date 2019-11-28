@@ -1,32 +1,29 @@
 CREATE TABLE "sprzedaz_FAKT"
 (
-    "id_produktu"                       numeric NOT NULL UNIQUE,
-    "id_czasu"                          numeric NOT NULL UNIQUE,
-    "id_transakcji"                     numeric NOT NULL UNIQUE,
-    "id_promocji"                       numeric NOT NULL UNIQUE,
-    "id_lokalizacji"                    numeric NOT NULL UNIQUE,
-    "id_formy_ekspozycji"               numeric NOT NULL UNIQUE,
-    "id_przedzialu_cenowego"            numeric NOT NULL UNIQUE,
-    "id_sposobu_platnosci"              numeric NOT NULL UNIQUE,
+    "id_produktu"                       numeric NOT NULL,
+    "id_czasu"                          numeric NOT NULL,
+    "id_transakcji"                     numeric NOT NULL,
+    "id_promocji"                       numeric NOT NULL,
+    "id_lokalizacji"                    numeric NOT NULL,
+    "id_formy_ekspozycji"               numeric NOT NULL,
+    "id_przedzialu_cenowego"            numeric NOT NULL,
+    "id_sposobu_platnosci"              numeric NOT NULL,
     "suma_ilosci_zakupionych_produktow" numeric NOT NULL,
-    "suma_ilosci_transakcji"            numeric NOT NULL,
     "suma_dochodow"                     numeric NOT NULL,
-    "suma_przychodow"                   numeric NOT NULL,
-    "suma_ilosc_klientow_w_zasiegu"     numeric NOT NULL
+    "suma_przychodow"                   numeric NOT NULL
 );
 
 CREATE TABLE "zwroty_FAKT"
 (
-    "id_produktu"                      numeric NOT NULL UNIQUE,
-    "id_czasu"                         numeric NOT NULL UNIQUE,
-    "id_transakcji"                    numeric NOT NULL UNIQUE,
-    "id_promocji"                      numeric NOT NULL UNIQUE,
-    "id_przedzialu_cenowego"           numeric NOT NULL UNIQUE,
-    "id_sposobu_platnosci"             numeric NOT NULL UNIQUE,
-    "suma_dochodow"                    numeric NOT NULL,
-    "suma_przychodow"                  numeric NOT NULL,
-    "suma_ilosci_zwroconych_produktow" numeric NOT NULL,
-    "suma_ilosci_zwrotow"              numeric NOT NULL
+    "id_produktu"                                  numeric NOT NULL,
+    "id_czasu"                                     numeric NOT NULL,
+    "id_transakcji"                                numeric NOT NULL,
+    "id_promocji"                                  numeric NOT NULL,
+    "id_przedzialu_cenowego_pojedynczego_produktu" numeric NOT NULL,
+    "id_sposobu_platnosci"                         numeric NOT NULL,
+    "suma_dochodow_utraconych"                     numeric NOT NULL,
+    "suma_przychodow_utraconych"                   numeric NOT NULL,
+    "suma_ilosci_zwroconych_produktow"             numeric NOT NULL
 );
 
 CREATE TABLE "magazyn_FAKT"
@@ -129,7 +126,7 @@ ALTER TABLE "zwroty_FAKT"
     ADD FOREIGN KEY ("id_promocji") REFERENCES "promocja_WYMIAR" ("id_promocji");
 
 ALTER TABLE "zwroty_FAKT"
-    ADD FOREIGN KEY ("id_przedzialu_cenowego") REFERENCES "przedzial_cenowy_WYMIAR" ("id_przedzialu_cenowego");
+    ADD FOREIGN KEY ("id_przedzialu_cenowego_pojedynczego_produktu") REFERENCES "przedzial_cenowy_WYMIAR" ("id_przedzialu_cenowego_pojedynczego_produktu");
 
 ALTER TABLE "zwroty_FAKT"
     ADD FOREIGN KEY ("id_sposobu_platnosci") REFERENCES "sposob_platnosci_WYMIAR" ("id_sposobu_platnosci");

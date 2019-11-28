@@ -83,6 +83,33 @@ begin
                            c."rok" = EXTRACT(YEAR FROM "czas"))
              left join WHOUSE."lokalizacja_WYMIAR" l
                        on (l."id_lokalizacji" = st_ma."id_sklepu");
+
+    INSERT INTO WHOUSE."zwroty_FAKT"("id_produktu", "id_czasu", "id_transakcji", "id_promocji",
+                                     "id_przedzialu_cenowego_pojedynczego_produktu",
+                                     "id_sposobu_platnosci", "suma_dochodow_utraconych", "suma_przychodow_utraconych",
+                                     "suma_ilosci_zwroconych_produktow")
+    SELECT st_zw."id_produktu",
+           "id_czasu",
+           "id_transakcji",
+           1,
+           "id_przedzialu_cenowego",
+           1,
+           p."marza_zawarta_w_cenie" * "ilosc_sztuk",
+           p."cena" * "ilosc_sztuk",
+           "ilosc_sztuk"
+    FROM "STAGINGAREA"."zwrot" st_zw
+             left join WHOUSE."czas_WYMIAR" c
+                       on (c."kwadrans" = round((EXTRACT(MINUTE FROM "czas") / 15)) and
+                           c."godzina" = EXTRACT(HOUR FROM "czas") and c."dzien" = EXTRACT(DAY FROM "czas") and
+                           c."miesiac" = EXTRACT(MONTH FROM "czas") and
+                           c."rok" = EXTRACT(YEAR FROM "czas"))
+             left join WHOUSE."produkt_WYMIAR" p
+                       on (p."id_produktu" = st_zw."id_produktu")
+             left join WHOUSE."przedzial_cenowy_WYMIAR" pc
+                       on (pc."start_przedzialu_zawiera" = (round("cena" / 10) * 10 - 5) and
+                           pc."koniec_przedzialu" = (round("cena" / 10) * 10 + 5));
+    COMMIT;
+
 end;
 /
 
