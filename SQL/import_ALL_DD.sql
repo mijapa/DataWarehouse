@@ -1,6 +1,7 @@
 SET DEFINE OFF
 CREATE OR REPLACE DIRECTORY IMPORT AS '/vagrant';
-
+--GRANT READ ON DIRECTORY IMPORT TO USER;
+--GRANT WRITE ON DIRECTORY IMPORT TO USER;
 CREATE TABLE "produk_STAGE" 
 ( "id_produktu" NUMBER(38) ,
   "cena" NUMBER(38) ,
@@ -39,16 +40,29 @@ ORGANIZATION EXTERNAL
   )
   REJECT LIMIT UNLIMITED;
 
-select * from "produk_STAGE" WHERE ROWNUM <= 100;
+select *
+from "produk_STAGE"
+WHERE ROWNUM <= 5;
 
 whenever sqlerror exit rollback;
 begin
-  INSERT INTO "produkt" ("id_produktu", "cena", "marka", "model", "producent", "kategoria", "rodzaj_produktu", "opis", "marza_zawarta_w_cenie") 
-  SELECT "id_produktu", "cena" * (select przelicznik from "kurs_walut" where "id_kursu" = 1), "marka", "model", "producent", "kategoria", "rodzaj_produktu", "opis", "marza_zawarta_w_cenie" FROM "produk_STAGE" ;
+    INSERT INTO "produkt" ("id_produktu", "cena", "marka", "model", "producent", "kategoria", "rodzaj_produktu", "opis",
+                           "marza_zawarta_w_cenie")
+    SELECT "id_produktu",
+           "cena" * (select "kurs_walut"."przelicznik" from "kurs_walut" where "id_kursu" = 1),
+           "marka",
+           "model",
+           "producent",
+           "kategoria",
+           "rodzaj_produktu",
+           "opis",
+           "marza_zawarta_w_cenie"
+    FROM "produk_STAGE";
   COMMIT;
   EXECUTE IMMEDIATE 'DROP TABLE "produk_STAGE"';
 end;
 /
+
 
 CREATE TABLE eksopozycja_STAGE 
 ( "id_reklamy" NUMBER(38),
@@ -82,7 +96,9 @@ ORGANIZATION EXTERNAL
   )
   REJECT LIMIT UNLIMITED;
 
-select * from eksopozycja_STAGE WHERE ROWNUM <= 100;
+select *
+from eksopozycja_STAGE
+WHERE ROWNUM <= 5;
 
 whenever sqlerror exit rollback;
 begin
@@ -101,8 +117,6 @@ begin
   EXECUTE IMMEDIATE 'DROP TABLE eksopozycja_STAGE';
 end;
 /
-
-
 
 
 CREATE TABLE "skle_STAGE" 
@@ -133,7 +147,9 @@ ORGANIZATION EXTERNAL
   )
   REJECT LIMIT UNLIMITED;
 
-select * from "skle_STAGE" WHERE ROWNUM <= 100;
+select *
+from "skle_STAGE"
+WHERE ROWNUM <= 5;
 
 whenever sqlerror exit rollback;
 begin
@@ -143,6 +159,52 @@ begin
   EXECUTE IMMEDIATE 'DROP TABLE "skle_STAGE"';
 end;
 /
+
+
+CREATE TABLE "magazy_STAGE"
+(
+    "id_produktu" NUMBER(38),
+    "id_sklepu"   NUMBER(38),
+    "ilosc_sztuk" NUMBER(38),
+    "czas"        TIMESTAMP
+)
+    ORGANIZATION EXTERNAL
+    ( TYPE ORACLE_LOADER
+        DEFAULT DIRECTORY IMPORT
+        ACCESS PARAMETERS
+        (records delimited BY '\n'
+        NOBADFILE
+        NODISCARDFILE
+        NOLOGFILE
+        skip 1
+        fields terminated BY ','
+            OPTIONALLY ENCLOSED BY '"' AND '"'
+            lrtrim
+            missing field VALUES are NULL
+            ( "id_produktu" CHAR (4000),
+            "id_sklepu" CHAR (4000),
+            "ilosc_sztuk" char (4000),
+            "czas" CHAR (4000) date_format DATE mask "YYYY-MM-DD:HH24:MI:SS"
+            )
+        )
+        LOCATION ('magazyn.csv')
+        )
+        REJECT LIMIT UNLIMITED;
+
+select *
+from "magazy_STAGE"
+WHERE ROWNUM <= 5;
+
+whenever sqlerror exit rollback;
+begin
+    INSERT INTO "magazyn" ("id_produktu", "id_sklepu", "ilosc_sztuk", "czas")
+    SELECT "id_produktu", "id_sklepu", "ilosc_sztuk", "czas"
+    FROM "magazy_STAGE";
+    COMMIT;
+    EXECUTE IMMEDIATE 'DROP TABLE "magazy_STAGE"';
+end;
+/
+
 
 
 CREATE TABLE "transakcj_STAGE" 
@@ -173,7 +235,9 @@ ORGANIZATION EXTERNAL
   )
   REJECT LIMIT UNLIMITED;
 
-select * from "transakcj_STAGE" WHERE ROWNUM <= 100;
+select *
+from "transakcj_STAGE"
+WHERE ROWNUM <= 5;
 
 whenever sqlerror exit rollback;
 begin
@@ -184,10 +248,12 @@ begin
 end;
 /
 
-CREATE TABLE "sprzedany_produk_STAGE" 
-( "id_produktu" NUMBER(38) ,
-  "id_transakcji" NUMBER(38) ,
-  "ilosc_sztuk" NUMBER(38) )
+CREATE TABLE "sprzedany_produk_STAGE"
+(
+    "id_transakcji" NUMBER(38),
+    "id_produktu"   NUMBER(38),
+    "ilosc_sztuk"   NUMBER(38)
+)
 ORGANIZATION EXTERNAL
   (  TYPE ORACLE_LOADER
      DEFAULT DIRECTORY IMPORT
@@ -202,8 +268,8 @@ ORGANIZATION EXTERNAL
            lrtrim
            missing field VALUES are NULL
            ( 
-           "id_produktu" CHAR(4000),
            "id_transakcji" CHAR(4000),
+               "id_produktu" CHAR (4000),
              "ilosc_sztuk" CHAR(4000)
            )
        )
@@ -211,21 +277,19 @@ ORGANIZATION EXTERNAL
   )
   REJECT LIMIT UNLIMITED;
 
-select * from "sprzedany_produk_STAGE" WHERE ROWNUM <= 100;
+select *
+from "sprzedany_produk_STAGE"
+WHERE ROWNUM <= 5;
 
 whenever sqlerror exit rollback;
 begin
-  INSERT INTO "sprzedany_produkt" ("id_produktu", "id_transakcji", "ilosc_sztuk") 
-  SELECT "id_produktu", "id_transakcji", "ilosc_sztuk" FROM "sprzedany_produk_STAGE" ;
+    INSERT INTO "sprzedany_produkt" ("id_transakcji", "id_produktu", "ilosc_sztuk")
+    SELECT "id_transakcji", "id_produktu", "ilosc_sztuk"
+    FROM "sprzedany_produk_STAGE";
   COMMIT;
   EXECUTE IMMEDIATE 'DROP TABLE "sprzedany_produk_STAGE"';
 end;
 /
-
-
-
-
-
 
 CREATE TABLE "zwro_STAGE" 
 ( "id_produktu" NUMBER(38) ,
@@ -255,7 +319,9 @@ ORGANIZATION EXTERNAL
   )
   REJECT LIMIT UNLIMITED;
 
-select * from "zwro_STAGE" WHERE ROWNUM <= 100;
+select *
+from "zwro_STAGE"
+WHERE ROWNUM <= 5;
 
 whenever sqlerror exit rollback;
 begin
@@ -266,83 +332,6 @@ begin
 end;
 /
 
-CREATE TABLE "magazy_STAGE" 
-( "id_produktu" NUMBER(38) ,
-  "id_sklepu" NUMBER(38) ,
-  "ilosc_sztuk" NUMBER(38) ,
-  "czas" TIMESTAMP )
-ORGANIZATION EXTERNAL
-  (  TYPE ORACLE_LOADER
-     DEFAULT DIRECTORY IMPORT
-     ACCESS PARAMETERS 
-       (records delimited BY '\n' 
-           NOBADFILE
-           NODISCARDFILE
-           NOLOGFILE
-           skip 1 
-           fields terminated BY ','
-           OPTIONALLY ENCLOSED BY '"' AND '"'
-           lrtrim
-           missing field VALUES are NULL
-           ( "id_produktu" CHAR(4000),
-             "id_sklepu" CHAR(4000),
-             "ilosc_sztuk" char(4000),
-             "czas" CHAR(4000) date_format DATE mask "YYYY-MM-DD:HH24:MI:SS"
-           )
-       )
-     LOCATION ('magazyn.csv')
-  )
-  REJECT LIMIT UNLIMITED;
-
-select * from "magazy_STAGE" WHERE ROWNUM <= 100;
-
-whenever sqlerror exit rollback;
-begin
-  INSERT INTO "magazyn" ("id_produktu", "id_sklepu", "ilosc_sztuk", "czas") 
-  SELECT "id_produktu", "id_sklepu", "ilosc_sztuk", "czas" FROM "magazy_STAGE" ;
-  COMMIT;
-  EXECUTE IMMEDIATE 'DROP TABLE "magazy_STAGE"';
-end;
-/
 
 
 
-
-CREATE TABLE "skle_STAGE" 
-( "id_sklepu" NUMBER(38) ,
-  "miasto" VARCHAR2(100) ,
-  "odleglosc_od_centrum" VARCHAR2(100) ,
-  "ilosc_klientow_w_zasiegu" NUMBER(38) )
-ORGANIZATION EXTERNAL
-  (  TYPE ORACLE_LOADER
-     DEFAULT DIRECTORY IMPORT
-     ACCESS PARAMETERS 
-       (records delimited BY '\n' 
-           NOBADFILE
-           NODISCARDFILE
-           NOLOGFILE
-           skip 1 
-           fields terminated BY ','
-           OPTIONALLY ENCLOSED BY '"' AND '"'
-           lrtrim
-           missing field VALUES are NULL
-           ( "id_sklepu" CHAR(4000),
-             "miasto" CHAR(4000),
-             "odleglosc_od_centrum" CHAR(4000),
-             "ilosc_klientow_w_zasiegu" CHAR(4000)
-           )
-       )
-     LOCATION ('sklep.csv')
-  )
-  REJECT LIMIT UNLIMITED;
-
-select * from "skle_STAGE" WHERE ROWNUM <= 100;
-
-whenever sqlerror exit rollback;
-begin
-  INSERT INTO "sklep" ("id_sklepu", "miasto", "powiat", "wojewodztwo", "kraj", "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu") 
-  SELECT "id_sklepu", regexp_substr("miasto", '[^|]+', 1, 1) miasto, regexp_substr("miasto", '[^|]+', 1, 2) powiat, regexp_substr("miasto", '[^|]+', 1, 3) wojewodztwo, regexp_substr("miasto", '[^|]+', 1, 4) kraj, "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu" FROM "skle_STAGE" ;
-  COMMIT;
-  EXECUTE IMMEDIATE 'DROP TABLE "skle_STAGE"';
-end;
-/

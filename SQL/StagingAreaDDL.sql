@@ -98,8 +98,9 @@ ALTER TABLE "transakcja" ADD FOREIGN KEY ("id_sklepu") REFERENCES "sklep" ("id_s
 
 ALTER TABLE "sprzedany_produkt" ADD FOREIGN KEY ("id_transakcji") REFERENCES "transakcja" ("id_transakcji");
 
-  CREATE TABLE "MICHAL"."kurs_walut" 
-   ("id_kursu" NUMBER(10,0), 
+CREATE TABLE "kurs_walut"
+(
+    "id_kursu"    NUMBER(10, 0),
 	"waluta_z" VARCHAR2(100 BYTE) NOT NULL ENABLE, 
 	"waluta_do" VARCHAR2(100 BYTE) NOT NULL ENABLE, 
 	"przelicznik" NUMBER(12,6) NOT NULL ENABLE, 
@@ -109,25 +110,25 @@ ALTER TABLE "sprzedany_produkt" ADD FOREIGN KEY ("id_transakcji") REFERENCES "tr
   PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
   BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
   TABLESPACE "USERS"  ENABLE
-   ) SEGMENT CREATION IMMEDIATE 
+) SEGMENT CREATION IMMEDIATE
   PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
  NOCOMPRESS LOGGING
   STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
   PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
   BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
   TABLESPACE "USERS" ;
-  
- insert into "MICHAL"."kurs_walut"
+
+insert into "kurs_walut"
 ("id_kursu", "waluta_z", "waluta_do", "przelicznik")
 values 
 (0, 'PLN', 'EUR', 4);
 
- insert into "MICHAL"."kurs_walut"
+insert into "kurs_walut"
 ("id_kursu", "waluta_z", "waluta_do", "przelicznik")
 values 
 (1, 'CZK', 'EUR', 1);
 
- insert into "MICHAL"."kurs_walut"
+insert into "kurs_walut"
 ("id_kursu", "waluta_z", "waluta_do", "przelicznik")
 values 
 (2, 'JPY', 'EUR', 4);
