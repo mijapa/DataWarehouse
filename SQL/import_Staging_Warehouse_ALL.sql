@@ -110,6 +110,50 @@ begin
                            pc."koniec_przedzialu" = (round("cena" / 10) * 10 + 5));
     COMMIT;
 
+    INSERT INTO WHOUSE."sprzedaz_FAKT"("id_produktu", "id_czasu", "id_transakcji", "id_promocji", "id_lokalizacji",
+                                       "id_formy_ekspozycji", "id_przedzialu_cenowego", "id_sposobu_platnosci",
+                                       "suma_ilosci_zakupionych_produktow", "suma_dochodow",
+                                       "suma_przychodow")
+    SELECT st_sp."id_produktu",
+           "id_czasu",
+           st_sp."id_transakcji",
+           prw."id_promocji",
+           "id_lokalizacji",
+           "id_ekspozycji",
+           "id_przedzialu_cenowego",
+           "id_sposobu_platnosci",
+           "ilosc_sztuk",
+           "ilosc_sztuk" * "marza_zawarta_w_cenie",
+           "ilosc_sztuk" * "cena"
+    FROM "STAGINGAREA"."sprzedany_produkt" st_sp
+             left join STAGINGAREA."transakcja" t
+                       on (t."id_transakcji" = st_sp."id_transakcji")
+             left join WHOUSE."lokalizacja_WYMIAR" l
+                       on (l."id_lokalizacji" = t."id_sklepu")
+             left join WHOUSE."czas_WYMIAR" c
+                       on (c."kwadrans" = round((EXTRACT(MINUTE FROM t."czas") / 15)) and
+                           c."godzina" = EXTRACT(HOUR FROM t."czas") and c."dzien" = EXTRACT(DAY FROM "czas") and
+                           c."miesiac" = EXTRACT(MONTH FROM t."czas") and
+                           c."rok" = EXTRACT(YEAR FROM t."czas"))
+             left join WHOUSE."produkt_WYMIAR" p
+                       on (p."id_produktu" = st_sp."id_produktu")
+             left join WHOUSE."przedzial_cenowy_WYMIAR" pc
+                       on (pc."start_przedzialu_zawiera" = (round("cena" / 10) * 10 - 5) and
+                           pc."koniec_przedzialu" = (round("cena" / 10) * 10 + 5))
+             left join WHOUSE."sposob_platnosci_WYMIAR" sp
+                       on (sp."rodzaj" = t."rodzaj_platnosci")
+             left join STAGINGAREA."produkt_promocja" pp
+                       on (pp."id_produktu" = st_sp."id_produktu")
+             left join STAGINGAREA."promocja" pr
+                       on (pr."id_promocji" = st_sp."id_produktu")
+             left join WHOUSE."promocja_WYMIAR" prw
+                       on (prw."data_rozpoczecia" = pp."data_rozpoczecia" and
+                           prw."data_zakonczenia" = pp."data_zakonczenia"
+                           and prw."procentowa_wysokosc_rabatu" = pr."procentowa_wysokosc_rabatu")
+             left join STAGINGAREA."produkt_ekspozycja" pe
+                       on (pe."id_produktu" = st_sp."id_produktu");
+    COMMIT;
+
 end;
 /
 

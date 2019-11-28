@@ -3,9 +3,9 @@ CREATE TABLE "sprzedaz_FAKT"
     "id_produktu"                       numeric NOT NULL,
     "id_czasu"                          numeric NOT NULL,
     "id_transakcji"                     numeric NOT NULL,
-    "id_promocji"                       numeric NOT NULL,
+    "id_promocji"                       numeric,
     "id_lokalizacji"                    numeric NOT NULL,
-    "id_formy_ekspozycji"               numeric NOT NULL,
+    "id_formy_ekspozycji"               numeric,
     "id_przedzialu_cenowego"            numeric NOT NULL,
     "id_sposobu_platnosci"              numeric NOT NULL,
     "suma_ilosci_zakupionych_produktow" numeric NOT NULL,
@@ -126,7 +126,7 @@ ALTER TABLE "zwroty_FAKT"
     ADD FOREIGN KEY ("id_promocji") REFERENCES "promocja_WYMIAR" ("id_promocji");
 
 ALTER TABLE "zwroty_FAKT"
-    ADD FOREIGN KEY ("id_przedzialu_cenowego_pojedynczego_produktu") REFERENCES "przedzial_cenowy_WYMIAR" ("id_przedzialu_cenowego_pojedynczego_produktu");
+    ADD FOREIGN KEY ("id_przedzialu_cenowego_pojedynczego_produktu") REFERENCES "przedzial_cenowy_WYMIAR" ("id_przedzialu_cenowego");
 
 ALTER TABLE "zwroty_FAKT"
     ADD FOREIGN KEY ("id_sposobu_platnosci") REFERENCES "sposob_platnosci_WYMIAR" ("id_sposobu_platnosci");
