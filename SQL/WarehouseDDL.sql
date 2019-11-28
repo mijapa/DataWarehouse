@@ -31,9 +31,9 @@ CREATE TABLE "zwroty_FAKT"
 
 CREATE TABLE "magazyn_FAKT"
 (
-    "id_produktu"           numeric NOT NULL UNIQUE,
-    "id_czasu"              numeric NOT NULL UNIQUE,
-    "id_lokalizacji"        numeric NOT NULL UNIQUE,
+    "id_produktu"           numeric NOT NULL,
+    "id_czasu"              numeric NOT NULL,
+    "id_lokalizacji"        numeric NOT NULL,
     "suma_ilosci_produktow" numeric NOT NULL
 );
 

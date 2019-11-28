@@ -70,6 +70,19 @@ begin
         VALUES (pr.od, pr.do);
     COMMIT;
 
+    INSERT INTO WHOUSE."magazyn_FAKT"("id_produktu", "id_czasu", "id_lokalizacji", "suma_ilosci_produktow")
+    SELECT "id_produktu",
+           "id_czasu",
+           "id_lokalizacji",
+           "ilosc_sztuk"
+    FROM "STAGINGAREA"."magazyn" st_ma
+             left join WHOUSE."czas_WYMIAR" c
+                       on (c."kwadrans" = round((EXTRACT(MINUTE FROM "czas") / 15)) and
+                           c."godzina" = EXTRACT(HOUR FROM "czas") and c."dzien" = EXTRACT(DAY FROM "czas") and
+                           c."miesiac" = EXTRACT(MONTH FROM "czas") and
+                           c."rok" = EXTRACT(YEAR FROM "czas"))
+             left join WHOUSE."lokalizacja_WYMIAR" l
+                       on (l."id_lokalizacji" = st_ma."id_sklepu");
 end;
 /
 
