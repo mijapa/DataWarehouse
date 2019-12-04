@@ -1,4 +1,5 @@
-whenever sqlerror exit rollback;
+whenever sqlerror exit
+rollback;
 begin
     INSERT INTO "WHOUSE"."produkt_WYMIAR" ("id_produktu", "cena", "marza_zawarta_w_cenie", "marka", "model",
                                            "producent", "kategoria", "rodzaj_produktu", "opis")
@@ -33,6 +34,32 @@ begin
         VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
     COMMIT;
 
+    MERGE INTO "WHOUSE"."czas_WYMIAR" c
+    USING (SELECT distinct round((EXTRACT(MINUTE FROM "data_rozpoczecia") / 15)) kw,
+                           EXTRACT(HOUR FROM "data_rozpoczecia")                 go,
+                           EXTRACT(DAY FROM "data_rozpoczecia")                  dz,
+                           EXTRACT(MONTH FROM "data_rozpoczecia")                mi,
+                           EXTRACT(YEAR FROM "data_rozpoczecia")                 ro
+           FROM "STAGINGAREA"."produkt_promocja") w
+    on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
+    WHEN NOT MATCHED THEN
+        INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+    COMMIT;
+
+    MERGE INTO "WHOUSE"."czas_WYMIAR" c
+    USING (SELECT distinct round((EXTRACT(MINUTE FROM "data_zakonczenia") / 15)) kw,
+                           EXTRACT(HOUR FROM "data_zakonczenia")                 go,
+                           EXTRACT(DAY FROM "data_zakonczenia")                  dz,
+                           EXTRACT(MONTH FROM "data_zakonczenia")                mi,
+                           EXTRACT(YEAR FROM "data_zakonczenia")                 ro
+           FROM "STAGINGAREA"."produkt_promocja") w
+    on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
+    WHEN NOT MATCHED THEN
+        INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+    COMMIT;
+
     insert into WHOUSE."forma_ekspozycji_WYMIAR" ("id_formy_ekspozycji", "nazwa")
     SELECT "id_ekspozycji", "nazwa_formy_ekspozycji"
     from STAGINGAREA."ekspozycja";
@@ -48,16 +75,30 @@ begin
     COMMIT;
 
     MERGE INTO "WHOUSE"."promocja_WYMIAR" p
-    USING (SELECT distinct "produkt_promocja"."data_rozpoczecia",
-                           "produkt_promocja"."data_zakonczenia",
-                           "promocja"."procentowa_wysokosc_rabatu"
-           from STAGINGAREA."produkt_promocja"
-                    natural join STAGINGAREA."promocja") pp
-    on (p."data_rozpoczecia" = pp."data_rozpoczecia" and p."data_zakonczenia" = pp."data_zakonczenia"
+    USING (SELECT distinct pp."data_rozpoczecia",
+                           pp."data_zakonczenia",
+                           "promocja"."procentowa_wysokosc_rabatu",
+                           cr."id_czasu" id_czasu_rozpoczecia,
+                           cz."id_czasu" id_czasu_zakonczenia
+           from STAGINGAREA."produkt_promocja" pp
+                    natural join STAGINGAREA."promocja"
+                    left join WHOUSE."czas_WYMIAR" cr
+                              on (cr."kwadrans" = round((EXTRACT(MINUTE FROM pp."data_rozpoczecia") / 15)) and
+                                  cr."godzina" = EXTRACT(HOUR FROM pp."data_rozpoczecia") and
+                                  cr."dzien" = EXTRACT(DAY FROM pp."data_rozpoczecia") and
+                                  cr."miesiac" = EXTRACT(MONTH FROM pp."data_rozpoczecia") and
+                                  cr."rok" = EXTRACT(YEAR FROM pp."data_rozpoczecia"))
+                    left join WHOUSE."czas_WYMIAR" cz
+                              on (cz."kwadrans" = round((EXTRACT(MINUTE FROM pp."data_zakonczenia") / 15)) and
+                                  cz."godzina" = EXTRACT(HOUR FROM pp."data_zakonczenia") and
+                                  cz."dzien" = EXTRACT(DAY FROM pp."data_rozpoczecia") and
+                                  cz."miesiac" = EXTRACT(MONTH FROM pp."data_rozpoczecia") and
+                                  cz."rok" = EXTRACT(YEAR FROM pp."data_zakonczenia"))) pp
+    on (p."id_czasu_rozpoczecia" = pp.id_czasu_rozpoczecia and p."id_czasu_zakonczenia" = pp.id_czasu_zakonczenia
         and p."procentowa_wysokosc_rabatu" = pp."procentowa_wysokosc_rabatu")
     WHEN NOT MATCHED THEN
-        INSERT ("data_rozpoczecia", "data_zakonczenia", "procentowa_wysokosc_rabatu")
-        VALUES (pp."data_rozpoczecia", pp."data_zakonczenia", pp."procentowa_wysokosc_rabatu");
+        INSERT ("id_czasu_rozpoczecia", "id_czasu_zakonczenia", "procentowa_wysokosc_rabatu")
+        VALUES (id_czasu_rozpoczecia, id_czasu_zakonczenia, pp."procentowa_wysokosc_rabatu");
     COMMIT;
 
     MERGE INTO "WHOUSE"."przedzial_cenowy_WYMIAR" pc
@@ -115,7 +156,7 @@ begin
                                        "suma_ilosci_zakupionych_produktow", "suma_dochodow",
                                        "suma_przychodow")
     SELECT st_sp."id_produktu",
-           "id_czasu",
+           c."id_czasu",
            st_sp."id_transakcji",
            prw."id_promocji",
            "id_lokalizacji",
@@ -145,10 +186,22 @@ begin
              left join STAGINGAREA."produkt_promocja" pp
                        on (pp."id_produktu" = st_sp."id_produktu")
              left join STAGINGAREA."promocja" pr
-                       on (pr."id_promocji" = st_sp."id_produktu")
+                       on (pr."id_promocji" = pp."id_promocji")
+             left join WHOUSE."czas_WYMIAR" cr
+                       on (cr."kwadrans" = round((EXTRACT(MINUTE FROM pp."data_rozpoczecia") / 15)) and
+                           cr."godzina" = EXTRACT(HOUR FROM pp."data_rozpoczecia") and
+                           cr."dzien" = EXTRACT(DAY FROM pp."data_rozpoczecia") and
+                           cr."miesiac" = EXTRACT(MONTH FROM pp."data_rozpoczecia") and
+                           cr."rok" = EXTRACT(YEAR FROM pp."data_rozpoczecia"))
+             left join WHOUSE."czas_WYMIAR" cz
+                       on (cz."kwadrans" = round((EXTRACT(MINUTE FROM pp."data_zakonczenia") / 15)) and
+                           cz."godzina" = EXTRACT(HOUR FROM pp."data_zakonczenia") and
+                           cz."dzien" = EXTRACT(DAY FROM pp."data_rozpoczecia") and
+                           cz."miesiac" = EXTRACT(MONTH FROM pp."data_rozpoczecia") and
+                           cz."rok" = EXTRACT(YEAR FROM pp."data_zakonczenia"))
              left join WHOUSE."promocja_WYMIAR" prw
-                       on (prw."data_rozpoczecia" = pp."data_rozpoczecia" and
-                           prw."data_zakonczenia" = pp."data_zakonczenia"
+                       on (prw."id_czasu_rozpoczecia" = cr."id_czasu" and
+                           prw."id_czasu_zakonczenia" = cz."id_czasu"
                            and prw."procentowa_wysokosc_rabatu" = pr."procentowa_wysokosc_rabatu")
              left join STAGINGAREA."produkt_ekspozycja" pe
                        on (pe."id_produktu" = st_sp."id_produktu");

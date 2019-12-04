@@ -60,8 +60,8 @@ CREATE TABLE "czas_WYMIAR"
 CREATE TABLE "promocja_WYMIAR"
 (
     "id_promocji"                numeric GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) NOT NULL PRIMARY KEY,
-    "data_rozpoczecia"           timestamp                                                          NOT NULL,
-    "data_zakonczenia"           timestamp                                                          NOT NULL,
+    "id_czasu_rozpoczecia"       numeric                                                            NOT NULL,
+    "id_czasu_zakonczenia"       numeric                                                            NOT NULL,
     "procentowa_wysokosc_rabatu" numeric                                                            NOT NULL
 );
 
@@ -139,3 +139,9 @@ ALTER TABLE "magazyn_FAKT"
 
 ALTER TABLE "magazyn_FAKT"
     ADD FOREIGN KEY ("id_lokalizacji") REFERENCES "lokalizacja_WYMIAR" ("id_lokalizacji");
+
+ALTER TABLE "promocja_WYMIAR"
+    ADD FOREIGN KEY ("id_czasu_rozpoczecia") REFERENCES "czas_WYMIAR" ("id_czasu");
+
+ALTER TABLE "promocja_WYMIAR"
+    ADD FOREIGN KEY ("id_czasu_zakonczenia") REFERENCES "czas_WYMIAR" ("id_czasu");
