@@ -2,15 +2,15 @@ whenever sqlerror exit
 rollback;
 begin
     MERGE INTO WHOUSE."produkt_WYMIAR" wpr
-    USING (SELECT "id_produktu",
-                  "cena",
-                  "marza_zawarta_w_cenie",
-                  "marka",
-                  "model",
-                  "producent",
-                  "kategoria",
-                  "rodzaj_produktu",
-                  "opis"
+    USING (SELECT distinct "id_produktu",
+                           "cena",
+                           "marza_zawarta_w_cenie",
+                           "marka",
+                           "model",
+                           "producent",
+                           "kategoria",
+                           "rodzaj_produktu",
+                           "opis"
            FROM "STAGINGAREA"."produkt") spr
     on (wpr."marka" = spr."marka" and wpr."model" = spr."model")
     WHEN NOT MATCHED THEN
@@ -21,15 +21,14 @@ begin
     COMMIT;
 
     MERGE INTO WHOUSE."lokalizacja_WYMIAR" l
-    USING (
-        SELECT "id_sklepu",
-               "miasto",
-               "powiat",
-               "wojewodztwo",
-               "kraj",
-               "odleglosc_od_centrum",
-               "ilosc_klientow_w_zasiegu"
-        FROM "STAGINGAREA"."sklep") s
+    USING (SELECT distinct "id_sklepu",
+                           "miasto",
+                           "powiat",
+                           "wojewodztwo",
+                           "kraj",
+                           "odleglosc_od_centrum",
+                           "ilosc_klientow_w_zasiegu"
+           FROM "STAGINGAREA"."sklep") s
     on (l."miasto" = s."miasto" and l."powiat" = s."powiat")
     WHEN NOT MATCHED THEN
         INSERT ("id_lokalizacji", "miasto", "powiat", "wojewodztwo", "kraj",
@@ -129,19 +128,18 @@ begin
     COMMIT;
 
     MERGE INTO WHOUSE."magazyn_FAKT" wh_ma
-    USING (
-        SELECT "id_produktu",
-               "id_czasu",
-               "id_lokalizacji",
-               "ilosc_sztuk"
-        FROM "STAGINGAREA"."magazyn" st_ma
-                 left join WHOUSE."czas_WYMIAR" c
-                           on (c."kwadrans" = round((EXTRACT(MINUTE FROM "czas") / 15)) and
-                               c."godzina" = EXTRACT(HOUR FROM "czas") and c."dzien" = EXTRACT(DAY FROM "czas") and
-                               c."miesiac" = EXTRACT(MONTH FROM "czas") and
-                               c."rok" = EXTRACT(YEAR FROM "czas"))
-                 left join WHOUSE."lokalizacja_WYMIAR" l
-                           on (l."id_lokalizacji" = st_ma."id_sklepu")) st_ma
+    USING (SELECT distinct "id_produktu",
+                           "id_czasu",
+                           "id_lokalizacji",
+                           "ilosc_sztuk"
+           FROM "STAGINGAREA"."magazyn" st_ma
+                    left join WHOUSE."czas_WYMIAR" c
+                              on (c."kwadrans" = round((EXTRACT(MINUTE FROM "czas") / 15)) and
+                                  c."godzina" = EXTRACT(HOUR FROM "czas") and c."dzien" = EXTRACT(DAY FROM "czas") and
+                                  c."miesiac" = EXTRACT(MONTH FROM "czas") and
+                                  c."rok" = EXTRACT(YEAR FROM "czas"))
+                    left join WHOUSE."lokalizacja_WYMIAR" l
+                              on (l."id_lokalizacji" = st_ma."id_sklepu")) st_ma
     on (st_ma."id_produktu" = wh_ma."id_produktu" and st_ma."id_czasu" = wh_ma."id_czasu" and
         st_ma."id_lokalizacji" = wh_ma."id_lokalizacji")
     WHEN NOT MATCHED THEN
@@ -184,7 +182,7 @@ begin
                                        "id_formy_ekspozycji", "id_przedzialu_cenowego", "id_sposobu_platnosci",
                                        "suma_ilosci_zakupionych_produktow", "suma_dochodow",
                                        "suma_przychodow")
-        SELECT st_sp."id_produktu",
+        SELECT distinct st_sp."id_produktu",
         c."id_czasu",
         st_sp."id_transakcji",
         prw."id_promocji",
