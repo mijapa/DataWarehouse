@@ -173,12 +173,11 @@ begin
     ON (z."id_produktu" = sel.id_pr and z."id_czasu" = sel.id_cz and
         z."id_transakcji" = sel.id_tr)
     WHEN NOT MATCHED THEN
-        INSERT ("id_produktu", "id_czasu", "id_transakcji", "id_promocji",
-                "id_przedzialu_cenowego_pojedynczego_produktu",
-                "id_sposobu_platnosci", "suma_dochodow_utraconych", "suma_przychodow_utraconych",
+        INSERT ("id_produktu", "id_czasu", "id_transakcji", "id_przedzialu_cenowego_pojedynczego_produktu",
+                "suma_dochodow_utraconych", "suma_przychodow_utraconych",
                 "suma_ilosci_zwroconych_produktow")
-            VALUES (sel.id_pr, sel.id_cz, sel.id_tr, 1, sel.id_pc, 1,
-                    sel.suma_dochodow_utraconych, sel.suma_przychodow_utraconych, sel.ilosc_sztuk_zwroconych_produktow
+            VALUES (sel.id_pr, sel.id_cz, sel.id_tr, sel.id_pc, sel.suma_dochodow_utraconych,
+                    sel.suma_przychodow_utraconych, sel.ilosc_sztuk_zwroconych_produktow
             );
     COMMIT;
 

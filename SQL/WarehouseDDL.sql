@@ -18,9 +18,7 @@ CREATE TABLE "zwroty_FAKT"
     "id_produktu"                                  numeric NOT NULL,
     "id_czasu"                                     numeric NOT NULL,
     "id_transakcji"                                numeric NOT NULL,
-    "id_promocji"                                  numeric NOT NULL,
     "id_przedzialu_cenowego_pojedynczego_produktu" numeric NOT NULL,
-    "id_sposobu_platnosci"                         numeric NOT NULL,
     "suma_dochodow_utraconych"                     numeric NOT NULL,
     "suma_przychodow_utraconych"                   numeric NOT NULL,
     "suma_ilosci_zwroconych_produktow"             numeric NOT NULL
@@ -123,13 +121,7 @@ ALTER TABLE "zwroty_FAKT"
     ADD FOREIGN KEY ("id_czasu") REFERENCES "czas_WYMIAR" ("id_czasu");
 
 ALTER TABLE "zwroty_FAKT"
-    ADD FOREIGN KEY ("id_promocji") REFERENCES "promocja_WYMIAR" ("id_promocji");
-
-ALTER TABLE "zwroty_FAKT"
     ADD FOREIGN KEY ("id_przedzialu_cenowego_pojedynczego_produktu") REFERENCES "przedzial_cenowy_WYMIAR" ("id_przedzialu_cenowego");
-
-ALTER TABLE "zwroty_FAKT"
-    ADD FOREIGN KEY ("id_sposobu_platnosci") REFERENCES "sposob_platnosci_WYMIAR" ("id_sposobu_platnosci");
 
 ALTER TABLE "magazyn_FAKT"
     ADD FOREIGN KEY ("id_produktu") REFERENCES "produkt_WYMIAR" ("id_produktu");
