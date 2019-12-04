@@ -76,9 +76,13 @@ begin
             VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
     COMMIT;
 
-    insert into WHOUSE."forma_ekspozycji_WYMIAR" ("id_formy_ekspozycji", "nazwa")
-        SELECT "id_ekspozycji", "nazwa_formy_ekspozycji"
-        from STAGINGAREA."ekspozycja";
+    MERGE INTO WHOUSE."forma_ekspozycji_WYMIAR" fe
+    USING (SELECT distinct "id_ekspozycji", "nazwa_formy_ekspozycji"
+           from STAGINGAREA."ekspozycja") sel
+    ON (sel."id_ekspozycji" = fe."id_formy_ekspozycji")
+    WHEN NOT MATCHED THEN
+        INSERT ("id_formy_ekspozycji", "nazwa")
+            values (sel."id_ekspozycji", sel."nazwa_formy_ekspozycji");
     commit;
 
     MERGE INTO "WHOUSE"."sposob_platnosci_WYMIAR" s
