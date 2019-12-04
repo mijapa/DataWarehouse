@@ -149,30 +149,35 @@ begin
             VALUES (st_ma."id_produktu", st_ma."id_czasu", st_ma."id_lokalizacji", st_ma."ilosc_sztuk");
     COMMIT;
 
-    INSERT INTO WHOUSE."zwroty_FAKT"("id_produktu", "id_czasu", "id_transakcji", "id_promocji",
-                                     "id_przedzialu_cenowego_pojedynczego_produktu",
-                                     "id_sposobu_platnosci", "suma_dochodow_utraconych", "suma_przychodow_utraconych",
-                                     "suma_ilosci_zwroconych_produktow")
-        SELECT st_zw."id_produktu",
-        "id_czasu",
-        "id_transakcji",
-        1,
-        "id_przedzialu_cenowego",
-        1,
-        p."marza_zawarta_w_cenie" * "ilosc_sztuk",
-        p."cena" * "ilosc_sztuk",
-        "ilosc_sztuk"
-        FROM "STAGINGAREA"."zwrot" st_zw
-        left join WHOUSE."czas_WYMIAR" c
-        on (c."kwadrans" = round((EXTRACT(MINUTE FROM "czas") / 15)) and
-            c."godzina" = EXTRACT(HOUR FROM "czas") and c."dzien" = EXTRACT(DAY FROM "czas") and
-            c."miesiac" = EXTRACT(MONTH FROM "czas") and
-            c."rok" = EXTRACT(YEAR FROM "czas"))
-        left join WHOUSE."produkt_WYMIAR" p
-        on (p."id_produktu" = st_zw."id_produktu")
-        left join WHOUSE."przedzial_cenowy_WYMIAR" pc
-        on (pc."start_przedzialu_zawiera" = (round("cena" / 10) * 10 - 5) and
-            pc."koniec_przedzialu" = (round("cena" / 10) * 10 + 5));
+    MERGE INTO WHOUSE."zwroty_FAKT" z
+    USING (SELECT distinct st_zw."id_produktu"                       id_pr,
+                           c."id_czasu"                              id_cz,
+                           st_zw."id_transakcji"                     id_tr,
+                           pc."id_przedzialu_cenowego"               id_pc,
+                           p."marza_zawarta_w_cenie" * "ilosc_sztuk" suma_dochodow_utraconych,
+                           p."cena" * "ilosc_sztuk"                  suma_przychodow_utraconych,
+                           st_zw."ilosc_sztuk"                       ilosc_sztuk_zwroconych_produktow
+           FROM "STAGINGAREA"."zwrot" st_zw
+                    left join WHOUSE."czas_WYMIAR" c
+                              on (c."kwadrans" = round((EXTRACT(MINUTE FROM "czas") / 15)) and
+                                  c."godzina" = EXTRACT(HOUR FROM "czas") and c."dzien" = EXTRACT(DAY FROM "czas") and
+                                  c."miesiac" = EXTRACT(MONTH FROM "czas") and
+                                  c."rok" = EXTRACT(YEAR FROM "czas"))
+                    left join WHOUSE."produkt_WYMIAR" p
+                              on (p."id_produktu" = st_zw."id_produktu")
+                    left join WHOUSE."przedzial_cenowy_WYMIAR" pc
+                              on (pc."start_przedzialu_zawiera" = (round("cena" / 10) * 10 - 5) and
+                                  pc."koniec_przedzialu" = (round("cena" / 10) * 10 + 5))) sel
+    ON (z."id_produktu" = sel.id_pr and z."id_czasu" = sel.id_cz and
+        z."id_transakcji" = sel.id_tr)
+    WHEN NOT MATCHED THEN
+        INSERT ("id_produktu", "id_czasu", "id_transakcji", "id_promocji",
+                "id_przedzialu_cenowego_pojedynczego_produktu",
+                "id_sposobu_platnosci", "suma_dochodow_utraconych", "suma_przychodow_utraconych",
+                "suma_ilosci_zwroconych_produktow")
+            VALUES (sel.id_pr, sel.id_cz, sel.id_tr, 1, sel.id_pc, 1,
+                    sel.suma_dochodow_utraconych, sel.suma_przychodow_utraconych, sel.ilosc_sztuk_zwroconych_produktow
+            );
     COMMIT;
 
     INSERT INTO WHOUSE."sprzedaz_FAKT"("id_produktu", "id_czasu", "id_transakcji", "id_promocji", "id_lokalizacji",
