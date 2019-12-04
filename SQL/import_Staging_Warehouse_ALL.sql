@@ -20,11 +20,22 @@ begin
                     spr."producent", spr."kategoria", spr."rodzaj_produktu", spr."opis");
     COMMIT;
 
-
-    INSERT INTO "WHOUSE"."lokalizacja_WYMIAR" ("id_lokalizacji", "miasto", "powiat", "wojewodztwo", "kraj",
-                                               "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu")
-        SELECT "id_sklepu", "miasto", "powiat", "wojewodztwo", "kraj", "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu"
-        FROM "STAGINGAREA"."sklep";
+    MERGE INTO WHOUSE."lokalizacja_WYMIAR" l
+    USING (
+        SELECT "id_sklepu",
+               "miasto",
+               "powiat",
+               "wojewodztwo",
+               "kraj",
+               "odleglosc_od_centrum",
+               "ilosc_klientow_w_zasiegu"
+        FROM "STAGINGAREA"."sklep") s
+    on (l."miasto" = s."miasto" and l."powiat" = s."powiat")
+    WHEN NOT MATCHED THEN
+        INSERT ("id_lokalizacji", "miasto", "powiat", "wojewodztwo", "kraj",
+                "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu")
+            VALUES (s."id_sklepu", s."miasto", s."powiat", s."wojewodztwo", s."kraj", s."odleglosc_od_centrum",
+                    s."ilosc_klientow_w_zasiegu");
     COMMIT;
 
     MERGE INTO "WHOUSE"."czas_WYMIAR" c
