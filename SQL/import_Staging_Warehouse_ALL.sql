@@ -128,19 +128,26 @@ begin
             VALUES (pr.od, pr.do);
     COMMIT;
 
-    INSERT INTO WHOUSE."magazyn_FAKT"("id_produktu", "id_czasu", "id_lokalizacji", "suma_ilosci_produktow")
+    MERGE INTO WHOUSE."magazyn_FAKT" wh_ma
+    USING (
         SELECT "id_produktu",
-        "id_czasu",
-        "id_lokalizacji",
-        "ilosc_sztuk"
+               "id_czasu",
+               "id_lokalizacji",
+               "ilosc_sztuk"
         FROM "STAGINGAREA"."magazyn" st_ma
-        left join WHOUSE."czas_WYMIAR" c
-        on (c."kwadrans" = round((EXTRACT(MINUTE FROM "czas") / 15)) and
-            c."godzina" = EXTRACT(HOUR FROM "czas") and c."dzien" = EXTRACT(DAY FROM "czas") and
-            c."miesiac" = EXTRACT(MONTH FROM "czas") and
-            c."rok" = EXTRACT(YEAR FROM "czas"))
-        left join WHOUSE."lokalizacja_WYMIAR" l
-        on (l."id_lokalizacji" = st_ma."id_sklepu");
+                 left join WHOUSE."czas_WYMIAR" c
+                           on (c."kwadrans" = round((EXTRACT(MINUTE FROM "czas") / 15)) and
+                               c."godzina" = EXTRACT(HOUR FROM "czas") and c."dzien" = EXTRACT(DAY FROM "czas") and
+                               c."miesiac" = EXTRACT(MONTH FROM "czas") and
+                               c."rok" = EXTRACT(YEAR FROM "czas"))
+                 left join WHOUSE."lokalizacja_WYMIAR" l
+                           on (l."id_lokalizacji" = st_ma."id_sklepu")) st_ma
+    on (st_ma."id_produktu" = wh_ma."id_produktu" and st_ma."id_czasu" = wh_ma."id_czasu" and
+        st_ma."id_lokalizacji" = wh_ma."id_lokalizacji")
+    WHEN NOT MATCHED THEN
+        INSERT ("id_produktu", "id_czasu", "id_lokalizacji", "suma_ilosci_produktow")
+            VALUES (st_ma."id_produktu", st_ma."id_czasu", st_ma."id_lokalizacji", st_ma."ilosc_sztuk");
+    COMMIT;
 
     INSERT INTO WHOUSE."zwroty_FAKT"("id_produktu", "id_czasu", "id_transakcji", "id_promocji",
                                      "id_przedzialu_cenowego_pojedynczego_produktu",
