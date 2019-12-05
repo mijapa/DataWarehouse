@@ -31,7 +31,7 @@ CREATE TABLE "magazyn"
     "id_sklepu"   numeric   NOT NULL,
     "czas"        timestamp NOT NULL,
     "ilosc_sztuk" numeric   NOT NULL,
-    PRIMARY KEY ("id_sklepu", "id_produktu")
+    PRIMARY KEY ("id_sklepu", "id_produktu", "czas")
 );
 
 CREATE TABLE "sklep"
