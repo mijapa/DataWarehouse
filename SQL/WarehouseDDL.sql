@@ -18,7 +18,6 @@ CREATE TABLE "zwroty_FAKT"
     "id_produktu"                                  numeric NOT NULL,
     "id_czasu"                                     numeric NOT NULL,
     "id_transakcji"                                numeric NOT NULL,
-    "id_przedzialu_cenowego_pojedynczego_produktu" numeric NOT NULL,
     "suma_dochodow_utraconych"                     numeric NOT NULL,
     "suma_przychodow_utraconych"                   numeric NOT NULL,
     "suma_ilosci_zwroconych_produktow"             numeric NOT NULL
@@ -76,8 +75,10 @@ CREATE TABLE "lokalizacja_WYMIAR"
 
 CREATE TABLE "forma_ekspozycji_WYMIAR"
 (
-    "id_formy_ekspozycji" numeric       NOT NULL PRIMARY KEY,
-    "nazwa"               varchar2(100) NOT NULL
+    "id_formy_ekspozycji"  numeric GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) NOT NULL PRIMARY KEY,
+    "id_czasu_rozpoczecia" numeric                                                            NOT NULL,
+    "id_czasu_zakonczenia" numeric                                                            NOT NULL,
+    "nazwa"                varchar2(100)                                                      NOT NULL
 );
 
 CREATE TABLE "przedzial_cenowy_WYMIAR"
@@ -119,9 +120,6 @@ ALTER TABLE "zwroty_FAKT"
 
 ALTER TABLE "zwroty_FAKT"
     ADD FOREIGN KEY ("id_czasu") REFERENCES "czas_WYMIAR" ("id_czasu");
-
-ALTER TABLE "zwroty_FAKT"
-    ADD FOREIGN KEY ("id_przedzialu_cenowego_pojedynczego_produktu") REFERENCES "przedzial_cenowy_WYMIAR" ("id_przedzialu_cenowego");
 
 ALTER TABLE "magazyn_FAKT"
     ADD FOREIGN KEY ("id_produktu") REFERENCES "produkt_WYMIAR" ("id_produktu");

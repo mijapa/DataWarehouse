@@ -16,8 +16,8 @@ begin
     WHEN NOT MATCHED THEN
         INSERT ("id_produktu", "cena", "marza_zawarta_w_cenie", "marka", "model",
                 "producent", "kategoria", "rodzaj_produktu", "opis")
-            VALUES (spr."id_produktu", spr."cena", spr."marza_zawarta_w_cenie", spr."marka", spr."model",
-                    spr."producent", spr."kategoria", spr."rodzaj_produktu", spr."opis");
+        VALUES (spr."id_produktu", spr."cena", spr."marza_zawarta_w_cenie", spr."marka", spr."model",
+                spr."producent", spr."kategoria", spr."rodzaj_produktu", spr."opis");
     COMMIT;
 
     MERGE INTO WHOUSE."lokalizacja_WYMIAR" l
@@ -33,8 +33,8 @@ begin
     WHEN NOT MATCHED THEN
         INSERT ("id_lokalizacji", "miasto", "powiat", "wojewodztwo", "kraj",
                 "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu")
-            VALUES (s."id_sklepu", s."miasto", s."powiat", s."wojewodztwo", s."kraj", s."odleglosc_od_centrum",
-                    s."ilosc_klientow_w_zasiegu");
+        VALUES (s."id_sklepu", s."miasto", s."powiat", s."wojewodztwo", s."kraj", s."odleglosc_od_centrum",
+                s."ilosc_klientow_w_zasiegu");
     COMMIT;
 
     MERGE INTO "WHOUSE"."czas_WYMIAR" c
@@ -47,7 +47,7 @@ begin
     on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
     WHEN NOT MATCHED THEN
         INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
-            VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
     COMMIT;
 
     MERGE INTO "WHOUSE"."czas_WYMIAR" c
@@ -60,7 +60,7 @@ begin
     on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
     WHEN NOT MATCHED THEN
         INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
-            VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
     COMMIT;
 
     MERGE INTO "WHOUSE"."czas_WYMIAR" c
@@ -73,16 +73,30 @@ begin
     on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
     WHEN NOT MATCHED THEN
         INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
-            VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
     COMMIT;
 
     MERGE INTO WHOUSE."forma_ekspozycji_WYMIAR" fe
-    USING (SELECT distinct "id_ekspozycji", "nazwa_formy_ekspozycji"
-           from STAGINGAREA."ekspozycja") sel
-    ON (sel."id_ekspozycji" = fe."id_formy_ekspozycji")
+    USING (SELECT distinct "id_ekspozycji", "nazwa_formy_ekspozycji", cr."id_czasu" i_c_r, cz."id_czasu" i_c_z
+           from STAGINGAREA."produkt_ekspozycja" pe
+                    natural join STAGINGAREA."ekspozycja"
+                    left join WHOUSE."czas_WYMIAR" cr
+                              on (cr."kwadrans" = round((EXTRACT(MINUTE FROM pe."data_rozpoczecia") / 15)) and
+                                  cr."godzina" = EXTRACT(HOUR FROM pe."data_rozpoczecia") and
+                                  cr."dzien" = EXTRACT(DAY FROM pe."data_rozpoczecia") and
+                                  cr."miesiac" = EXTRACT(MONTH FROM pe."data_rozpoczecia") and
+                                  cr."rok" = EXTRACT(YEAR FROM pe."data_rozpoczecia"))
+                    left join WHOUSE."czas_WYMIAR" cz
+                              on (cz."kwadrans" = round((EXTRACT(MINUTE FROM pe."data_zakonczenia") / 15)) and
+                                  cz."godzina" = EXTRACT(HOUR FROM pe."data_zakonczenia") and
+                                  cz."dzien" = EXTRACT(DAY FROM pe."data_rozpoczecia") and
+                                  cz."miesiac" = EXTRACT(MONTH FROM pe."data_rozpoczecia") and
+                                  cz."rok" = EXTRACT(YEAR FROM pe."data_zakonczenia"))) sel
+    ON (sel."nazwa_formy_ekspozycji" = fe."nazwa" and sel.i_c_r = fe."id_czasu_rozpoczecia" and
+        sel.i_c_z = fe."id_czasu_zakonczenia")
     WHEN NOT MATCHED THEN
-        INSERT ("id_formy_ekspozycji", "nazwa")
-            values (sel."id_ekspozycji", sel."nazwa_formy_ekspozycji");
+        INSERT ("id_czasu_rozpoczecia", "id_czasu_zakonczenia", "nazwa")
+        values (sel.i_c_r, sel.i_c_z, sel."nazwa_formy_ekspozycji");
     commit;
 
     MERGE INTO "WHOUSE"."sposob_platnosci_WYMIAR" s
@@ -91,7 +105,7 @@ begin
     on (s."rodzaj" = t."rodzaj_platnosci")
     WHEN NOT MATCHED THEN
         INSERT ("rodzaj")
-            VALUES (t."rodzaj_platnosci");
+        VALUES (t."rodzaj_platnosci");
     COMMIT;
 
     MERGE INTO "WHOUSE"."promocja_WYMIAR" p
@@ -118,7 +132,7 @@ begin
         and p."procentowa_wysokosc_rabatu" = pp."procentowa_wysokosc_rabatu")
     WHEN NOT MATCHED THEN
         INSERT ("id_czasu_rozpoczecia", "id_czasu_zakonczenia", "procentowa_wysokosc_rabatu")
-            VALUES (id_czasu_rozpoczecia, id_czasu_zakonczenia, pp."procentowa_wysokosc_rabatu");
+        VALUES (id_czasu_rozpoczecia, id_czasu_zakonczenia, pp."procentowa_wysokosc_rabatu");
     COMMIT;
 
     MERGE INTO "WHOUSE"."przedzial_cenowy_WYMIAR" pc
@@ -128,7 +142,7 @@ begin
     on (pc."start_przedzialu_zawiera" = pr.od and pc."koniec_przedzialu" = pr.do)
     WHEN NOT MATCHED THEN
         INSERT ("start_przedzialu_zawiera", "koniec_przedzialu")
-            VALUES (pr.od, pr.do);
+        VALUES (pr.od, pr.do);
     COMMIT;
 
     MERGE INTO WHOUSE."magazyn_FAKT" wh_ma
@@ -148,14 +162,13 @@ begin
         st_ma."id_lokalizacji" = wh_ma."id_lokalizacji")
     WHEN NOT MATCHED THEN
         INSERT ("id_produktu", "id_czasu", "id_lokalizacji", "suma_ilosci_produktow")
-            VALUES (st_ma."id_produktu", st_ma."id_czasu", st_ma."id_lokalizacji", st_ma."ilosc_sztuk");
+        VALUES (st_ma."id_produktu", st_ma."id_czasu", st_ma."id_lokalizacji", st_ma."ilosc_sztuk");
     COMMIT;
 
     MERGE INTO WHOUSE."zwroty_FAKT" z
     USING (SELECT distinct st_zw."id_produktu"                       id_pr,
                            c."id_czasu"                              id_cz,
                            st_zw."id_transakcji"                     id_tr,
-                           pc."id_przedzialu_cenowego"               id_pc,
                            p."marza_zawarta_w_cenie" * "ilosc_sztuk" suma_dochodow_utraconych,
                            p."cena" * "ilosc_sztuk"                  suma_przychodow_utraconych,
                            st_zw."ilosc_sztuk"                       ilosc_sztuk_zwroconych_produktow
@@ -166,19 +179,15 @@ begin
                                   c."miesiac" = EXTRACT(MONTH FROM "czas") and
                                   c."rok" = EXTRACT(YEAR FROM "czas"))
                     left join WHOUSE."produkt_WYMIAR" p
-                              on (p."id_produktu" = st_zw."id_produktu")
-                    left join WHOUSE."przedzial_cenowy_WYMIAR" pc
-                              on (pc."start_przedzialu_zawiera" = (round("cena" / 10) * 10 - 5) and
-                                  pc."koniec_przedzialu" = (round("cena" / 10) * 10 + 5))) sel
+                              on (p."id_produktu" = st_zw."id_produktu")) sel
     ON (z."id_produktu" = sel.id_pr and z."id_czasu" = sel.id_cz and
         z."id_transakcji" = sel.id_tr)
     WHEN NOT MATCHED THEN
-        INSERT ("id_produktu", "id_czasu", "id_transakcji", "id_przedzialu_cenowego_pojedynczego_produktu",
+        INSERT ("id_produktu", "id_czasu", "id_transakcji",
                 "suma_dochodow_utraconych", "suma_przychodow_utraconych",
                 "suma_ilosci_zwroconych_produktow")
-            VALUES (sel.id_pr, sel.id_cz, sel.id_tr, sel.id_pc, sel.suma_dochodow_utraconych,
-                    sel.suma_przychodow_utraconych, sel.ilosc_sztuk_zwroconych_produktow
-            );
+        VALUES (sel.id_pr, sel.id_cz, sel.id_tr, sel.suma_dochodow_utraconych,
+                sel.suma_przychodow_utraconych, sel.ilosc_sztuk_zwroconych_produktow);
     COMMIT;
 
     MERGE INTO WHOUSE."sprzedaz_FAKT" sp
@@ -187,7 +196,7 @@ begin
                            st_sp."id_transakcji",
                            prw."id_promocji",
                            "id_lokalizacji",
-                           "id_ekspozycji",
+                           pe."id_ekspozycji",
                            "id_przedzialu_cenowego",
                            "id_sposobu_platnosci",
                            "ilosc_sztuk",
@@ -231,18 +240,36 @@ begin
                                   prw."id_czasu_zakonczenia" = cz."id_czasu"
                                   and prw."procentowa_wysokosc_rabatu" = pr."procentowa_wysokosc_rabatu")
                     left join STAGINGAREA."produkt_ekspozycja" pe
-                              on (pe."id_produktu" = st_sp."id_produktu")) sel
+                              on (pe."id_produktu" = st_sp."id_produktu")
+                    left join STAGINGAREA."ekspozycja" e
+                              on (pe."id_ekspozycji" = e."id_ekspozycji")
+                    left join WHOUSE."czas_WYMIAR" crfe
+                              on (crfe."kwadrans" = round((EXTRACT(MINUTE FROM pe."data_rozpoczecia") / 15)) and
+                                  crfe."godzina" = EXTRACT(HOUR FROM pe."data_rozpoczecia") and
+                                  crfe."dzien" = EXTRACT(DAY FROM pe."data_rozpoczecia") and
+                                  crfe."miesiac" = EXTRACT(MONTH FROM pe."data_rozpoczecia") and
+                                  crfe."rok" = EXTRACT(YEAR FROM pe."data_rozpoczecia"))
+                    left join WHOUSE."czas_WYMIAR" czfe
+                              on (czfe."kwadrans" = round((EXTRACT(MINUTE FROM pe."data_zakonczenia") / 15)) and
+                                  czfe."godzina" = EXTRACT(HOUR FROM pe."data_zakonczenia") and
+                                  czfe."dzien" = EXTRACT(DAY FROM pe."data_rozpoczecia") and
+                                  czfe."miesiac" = EXTRACT(MONTH FROM pe."data_rozpoczecia") and
+                                  czfe."rok" = EXTRACT(YEAR FROM pe."data_zakonczenia"))
+                    left join WHOUSE."forma_ekspozycji_WYMIAR" few
+                              on (few."id_czasu_rozpoczecia" = crfe."id_czasu" and
+                                  few."id_czasu_zakonczenia" = czfe."id_czasu"
+                                  and few."nazwa" = e."nazwa_formy_ekspozycji")) sel
     ON (sp."id_transakcji" = sel."id_transakcji")
     WHEN NOT MATCHED THEN
         INSERT ("id_produktu", "id_czasu", "id_transakcji", "id_promocji", "id_lokalizacji",
                 "id_formy_ekspozycji", "id_przedzialu_cenowego", "id_sposobu_platnosci",
                 "suma_ilosci_zakupionych_produktow", "suma_dochodow",
                 "suma_przychodow")
-            VALUES (sel."id_produktu", sel."id_czasu", sel."id_transakcji", sel."id_promocji", sel."id_lokalizacji",
-                    sel."id_ekspozycji", sel."id_przedzialu_cenowego", sel."id_sposobu_platnosci", sel."ilosc_sztuk",
-                    sel.dochod, sel.przychod);
+        VALUES (sel."id_produktu", sel."id_czasu", sel."id_transakcji", sel."id_promocji", sel."id_lokalizacji",
+                sel."id_ekspozycji", sel."id_przedzialu_cenowego", sel."id_sposobu_platnosci", sel."ilosc_sztuk",
+                sel.dochod, sel.przychod);
     COMMIT;
-end;
+end ;
 /
 
   
