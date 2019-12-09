@@ -95,7 +95,46 @@ begin
                            EXTRACT(DAY FROM "data_zakonczenia")                  dz,
                            EXTRACT(MONTH FROM "data_zakonczenia")                mi,
                            EXTRACT(YEAR FROM "data_zakonczenia")                 ro
-           FROM "STAGINGAREA"."produkt_promocja") w
+           FROM "STAGINGAREA"."produkt_ekspozycja") w
+    on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
+    WHEN NOT MATCHED THEN
+        INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+    COMMIT;
+
+    MERGE INTO "WHOUSE"."czas_WYMIAR" c
+    USING (SELECT distinct round((EXTRACT(MINUTE FROM "czas") / 15)) kw,
+                           EXTRACT(HOUR FROM "czas")                 go,
+                           EXTRACT(DAY FROM "czas")                  dz,
+                           EXTRACT(MONTH FROM "czas")                mi,
+                           EXTRACT(YEAR FROM "czas")                 ro
+           FROM "STAGINGAREA"."transakcja") w
+    on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
+    WHEN NOT MATCHED THEN
+        INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+    COMMIT;
+
+    MERGE INTO "WHOUSE"."czas_WYMIAR" c
+    USING (SELECT distinct round((EXTRACT(MINUTE FROM "czas") / 15)) kw,
+                           EXTRACT(HOUR FROM "czas")                 go,
+                           EXTRACT(DAY FROM "czas")                  dz,
+                           EXTRACT(MONTH FROM "czas")                mi,
+                           EXTRACT(YEAR FROM "czas")                 ro
+           FROM "STAGINGAREA"."zwrot") w
+    on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
+    WHEN NOT MATCHED THEN
+        INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+    COMMIT;
+
+    MERGE INTO "WHOUSE"."czas_WYMIAR" c
+    USING (SELECT distinct round((EXTRACT(MINUTE FROM "czas") / 15)) kw,
+                           EXTRACT(HOUR FROM "czas")                 go,
+                           EXTRACT(DAY FROM "czas")                  dz,
+                           EXTRACT(MONTH FROM "czas")                mi,
+                           EXTRACT(YEAR FROM "czas")                 ro
+           FROM "STAGINGAREA"."transakcja") w
     on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
     WHEN NOT MATCHED THEN
         INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
