@@ -135,3 +135,5 @@ ALTER TABLE "promocja_WYMIAR"
 
 ALTER TABLE "promocja_WYMIAR"
     ADD FOREIGN KEY ("id_czasu_zakonczenia") REFERENCES "czas_WYMIAR" ("id_czasu");
+
+COMMIT;

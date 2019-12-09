@@ -29,7 +29,7 @@ begin
                            "odleglosc_od_centrum",
                            "ilosc_klientow_w_zasiegu"
            FROM "STAGINGAREA"."sklep") s
-    on (l."miasto" = s."miasto" and l."powiat" = s."powiat")
+    on (l."id_lokalizacji" = s."id_sklepu" and l."miasto" = s."miasto" and l."powiat" = s."powiat")
     WHEN NOT MATCHED THEN
         INSERT ("id_lokalizacji", "miasto", "powiat", "wojewodztwo", "kraj",
                 "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu")
@@ -44,6 +44,32 @@ begin
                            EXTRACT(MONTH FROM "czas")                mi,
                            EXTRACT(YEAR FROM "czas")                 ro
            FROM "STAGINGAREA"."magazyn") w
+    on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
+    WHEN NOT MATCHED THEN
+        INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+    COMMIT;
+
+    MERGE INTO "WHOUSE"."czas_WYMIAR" c
+    USING (SELECT distinct round((EXTRACT(MINUTE FROM "czas") / 15)) kw,
+                           EXTRACT(HOUR FROM "czas")                 go,
+                           EXTRACT(DAY FROM "czas")                  dz,
+                           EXTRACT(MONTH FROM "czas")                mi,
+                           EXTRACT(YEAR FROM "czas")                 ro
+           FROM "STAGINGAREA"."transakcja") w
+    on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
+    WHEN NOT MATCHED THEN
+        INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+    COMMIT;
+
+    MERGE INTO "WHOUSE"."czas_WYMIAR" c
+    USING (SELECT distinct round((EXTRACT(MINUTE FROM "czas") / 15)) kw,
+                           EXTRACT(HOUR FROM "czas")                 go,
+                           EXTRACT(DAY FROM "czas")                  dz,
+                           EXTRACT(MONTH FROM "czas")                mi,
+                           EXTRACT(YEAR FROM "czas")                 ro
+           FROM "STAGINGAREA"."zwrot") w
     on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
     WHEN NOT MATCHED THEN
         INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
@@ -70,6 +96,32 @@ begin
                            EXTRACT(MONTH FROM "data_zakonczenia")                mi,
                            EXTRACT(YEAR FROM "data_zakonczenia")                 ro
            FROM "STAGINGAREA"."produkt_promocja") w
+    on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
+    WHEN NOT MATCHED THEN
+        INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+    COMMIT;
+
+    MERGE INTO "WHOUSE"."czas_WYMIAR" c
+    USING (SELECT distinct round((EXTRACT(MINUTE FROM "data_rozpoczecia") / 15)) kw,
+                           EXTRACT(HOUR FROM "data_rozpoczecia")                 go,
+                           EXTRACT(DAY FROM "data_rozpoczecia")                  dz,
+                           EXTRACT(MONTH FROM "data_rozpoczecia")                mi,
+                           EXTRACT(YEAR FROM "data_rozpoczecia")                 ro
+           FROM "STAGINGAREA"."produkt_ekspozycja") w
+    on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
+    WHEN NOT MATCHED THEN
+        INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
+        VALUES (w.kw, w.go, w.dz, w.mi, w.ro);
+    COMMIT;
+
+    MERGE INTO "WHOUSE"."czas_WYMIAR" c
+    USING (SELECT distinct round((EXTRACT(MINUTE FROM "data_zakonczenia") / 15)) kw,
+                           EXTRACT(HOUR FROM "data_zakonczenia")                 go,
+                           EXTRACT(DAY FROM "data_zakonczenia")                  dz,
+                           EXTRACT(MONTH FROM "data_zakonczenia")                mi,
+                           EXTRACT(YEAR FROM "data_zakonczenia")                 ro
+           FROM "STAGINGAREA"."produkt_ekspozycja") w
     on (c."kwadrans" = w.kw and c."godzina" = w.go and c."dzien" = w.dz and c."miesiac" = w.mi and c."rok" = w.ro)
     WHEN NOT MATCHED THEN
         INSERT ("kwadrans", "godzina", "dzien", "miesiac", "rok")
@@ -190,37 +242,30 @@ begin
                 sel.suma_przychodow_utraconych, sel.ilosc_sztuk_zwroconych_produktow);
     COMMIT;
 
-    MERGE INTO WHOUSE."sprzedaz_FAKT" sp
-    USING (SELECT distinct st_sp."id_produktu",
-                           c."id_czasu",
-                           st_sp."id_transakcji",
-                           prw."id_promocji",
-                           "id_lokalizacji",
-                           pe."id_ekspozycji",
-                           "id_przedzialu_cenowego",
-                           "id_sposobu_platnosci",
-                           "ilosc_sztuk",
-                           "ilosc_sztuk" * "marza_zawarta_w_cenie" dochod,
-                           "ilosc_sztuk" * "cena"                  przychod
-           FROM "STAGINGAREA"."sprzedany_produkt" st_sp
-                    left join STAGINGAREA."transakcja" t
-                              on (t."id_transakcji" = st_sp."id_transakcji")
-                    left join WHOUSE."lokalizacja_WYMIAR" l
-                              on (l."id_lokalizacji" = t."id_sklepu")
-                    left join WHOUSE."czas_WYMIAR" c
-                              on (c."kwadrans" = round((EXTRACT(MINUTE FROM t."czas") / 15)) and
-                                  c."godzina" = EXTRACT(HOUR FROM t."czas") and c."dzien" = EXTRACT(DAY FROM "czas") and
-                                  c."miesiac" = EXTRACT(MONTH FROM t."czas") and
-                                  c."rok" = EXTRACT(YEAR FROM t."czas"))
-                    left join WHOUSE."produkt_WYMIAR" p
-                              on (p."id_produktu" = st_sp."id_produktu")
-                    left join WHOUSE."przedzial_cenowy_WYMIAR" pc
-                              on (pc."start_przedzialu_zawiera" = (round("cena" / 10) * 10 - 5) and
-                                  pc."koniec_przedzialu" = (round("cena" / 10) * 10 + 5))
-                    left join WHOUSE."sposob_platnosci_WYMIAR" sp
-                              on (sp."rodzaj" = t."rodzaj_platnosci")
+    MERGE INTO WHOUSE."sprzedaz_FAKT" sprzedaz_fakt
+    USING (SELECT distinct staging_sprzedany_produkt."id_produktu"                                          id_produktu,
+                           staging_sprzedany_produkt."id_transakcji"                                        id_transakcji,
+                           czas_wymiar_transakcja."id_czasu"                                                id_czasu_sprzedazy,
+                           promocja_wymiar."id_promocji"                                                    id_promocji,
+                           staging_transakcja."id_sklepu"                                                   id_lokalizacji,
+                           forma_wymiar."id_formy_ekspozycji"                                               id_formy_ekspozycji,
+                           przedzial_wymiar."id_przedzialu_cenowego"                                        id_przedzialu_cenowego,
+                           sposob_wymiar."id_sposobu_platnosci"                                             id_sposobu_platnosci,
+                           staging_sprzedany_produkt."ilosc_sztuk"                                          ilosc_zakupionych_produktow,
+                           staging_sprzedany_produkt."ilosc_sztuk" * produkt_wymiar."marza_zawarta_w_cenie" dochod,
+                           staging_sprzedany_produkt."ilosc_sztuk" * produkt_wymiar."cena"                  przychod
+           FROM "STAGINGAREA"."sprzedany_produkt" staging_sprzedany_produkt
+                    left join STAGINGAREA."transakcja" staging_transakcja
+                              on (staging_transakcja."id_transakcji" = staging_sprzedany_produkt."id_transakcji")
+                    left join WHOUSE."czas_WYMIAR" czas_wymiar_transakcja
+                              on (czas_wymiar_transakcja."kwadrans" =
+                                  round((EXTRACT(MINUTE FROM staging_transakcja."czas") / 15)) and
+                                  czas_wymiar_transakcja."godzina" = EXTRACT(HOUR FROM staging_transakcja."czas") and
+                                  czas_wymiar_transakcja."dzien" = EXTRACT(DAY FROM "czas") and
+                                  czas_wymiar_transakcja."miesiac" = EXTRACT(MONTH FROM staging_transakcja."czas") and
+                                  czas_wymiar_transakcja."rok" = EXTRACT(YEAR FROM staging_transakcja."czas"))
                     left join STAGINGAREA."produkt_promocja" pp
-                              on (pp."id_produktu" = st_sp."id_produktu")
+                              on (pp."id_produktu" = staging_sprzedany_produkt."id_produktu")
                     left join STAGINGAREA."promocja" pr
                               on (pr."id_promocji" = pp."id_promocji")
                     left join WHOUSE."czas_WYMIAR" cr
@@ -235,12 +280,12 @@ begin
                                   cz."dzien" = EXTRACT(DAY FROM pp."data_rozpoczecia") and
                                   cz."miesiac" = EXTRACT(MONTH FROM pp."data_rozpoczecia") and
                                   cz."rok" = EXTRACT(YEAR FROM pp."data_zakonczenia"))
-                    left join WHOUSE."promocja_WYMIAR" prw
-                              on (prw."id_czasu_rozpoczecia" = cr."id_czasu" and
-                                  prw."id_czasu_zakonczenia" = cz."id_czasu"
-                                  and prw."procentowa_wysokosc_rabatu" = pr."procentowa_wysokosc_rabatu")
+                    left join WHOUSE."promocja_WYMIAR" promocja_wymiar
+                              on (promocja_wymiar."id_czasu_rozpoczecia" = cr."id_czasu" and
+                                  promocja_wymiar."id_czasu_zakonczenia" = cz."id_czasu"
+                                  and promocja_wymiar."procentowa_wysokosc_rabatu" = pr."procentowa_wysokosc_rabatu")
                     left join STAGINGAREA."produkt_ekspozycja" pe
-                              on (pe."id_produktu" = st_sp."id_produktu")
+                              on (pe."id_produktu" = staging_sprzedany_produkt."id_produktu")
                     left join STAGINGAREA."ekspozycja" e
                               on (pe."id_ekspozycji" = e."id_ekspozycji")
                     left join WHOUSE."czas_WYMIAR" crfe
@@ -255,19 +300,26 @@ begin
                                   czfe."dzien" = EXTRACT(DAY FROM pe."data_rozpoczecia") and
                                   czfe."miesiac" = EXTRACT(MONTH FROM pe."data_rozpoczecia") and
                                   czfe."rok" = EXTRACT(YEAR FROM pe."data_zakonczenia"))
-                    left join WHOUSE."forma_ekspozycji_WYMIAR" few
-                              on (few."id_czasu_rozpoczecia" = crfe."id_czasu" and
-                                  few."id_czasu_zakonczenia" = czfe."id_czasu"
-                                  and few."nazwa" = e."nazwa_formy_ekspozycji")) sel
-    ON (sp."id_transakcji" = sel."id_transakcji")
+                    left join WHOUSE."forma_ekspozycji_WYMIAR" forma_wymiar
+                              on (forma_wymiar."id_czasu_rozpoczecia" = crfe."id_czasu" and
+                                  forma_wymiar."id_czasu_zakonczenia" = czfe."id_czasu"
+                                  and forma_wymiar."nazwa" = e."nazwa_formy_ekspozycji")
+                    left join WHOUSE."produkt_WYMIAR" produkt_wymiar
+                              on (produkt_wymiar."id_produktu" = staging_sprzedany_produkt."id_produktu")
+                    left join WHOUSE."przedzial_cenowy_WYMIAR" przedzial_wymiar
+                              on (przedzial_wymiar."start_przedzialu_zawiera" =
+                                  (round(produkt_wymiar."cena" / 10) * 10 - 5) and
+                                  przedzial_wymiar."koniec_przedzialu" = (round(produkt_wymiar."cena" / 10) * 10 + 5))
+                    left join WHOUSE."sposob_platnosci_WYMIAR" sposob_wymiar
+                              on (sposob_wymiar."rodzaj" = staging_transakcja."rodzaj_platnosci")) sel
+    on (sprzedaz_fakt."id_transakcji" = sel.id_transakcji and sprzedaz_fakt."id_produktu" = sel.id_produktu)
     WHEN NOT MATCHED THEN
-        INSERT ("id_produktu", "id_czasu", "id_transakcji", "id_promocji", "id_lokalizacji",
-                "id_formy_ekspozycji", "id_przedzialu_cenowego", "id_sposobu_platnosci",
-                "suma_ilosci_zakupionych_produktow", "suma_dochodow",
+        INSERT ("id_produktu", "id_czasu", "id_transakcji", "id_promocji", "id_lokalizacji", "id_formy_ekspozycji",
+                "id_przedzialu_cenowego", "id_sposobu_platnosci", "suma_ilosci_zakupionych_produktow", "suma_dochodow",
                 "suma_przychodow")
-        VALUES (sel."id_produktu", sel."id_czasu", sel."id_transakcji", sel."id_promocji", sel."id_lokalizacji",
-                sel."id_ekspozycji", sel."id_przedzialu_cenowego", sel."id_sposobu_platnosci", sel."ilosc_sztuk",
-                sel.dochod, sel.przychod);
+        VALUES (sel.id_produktu, sel.id_czasu_sprzedazy, sel.id_transakcji, sel.id_promocji, sel.id_lokalizacji,
+                sel.id_formy_ekspozycji, sel.id_przedzialu_cenowego, sel.id_sposobu_platnosci,
+                sel.ilosc_zakupionych_produktow, sel.dochod, sel.przychod);
     COMMIT;
 end ;
 /
