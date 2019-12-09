@@ -152,4 +152,4 @@ values (1, 'CZK', 'EUR', 1);
 
 insert into "kurs_walut"
     ("id_kursu", "waluta_z", "waluta_do", "przelicznik")
-values (2, 'JPY', 'EUR', 4);
+values (2, 'JPY', 'EUR', 0.0083);
