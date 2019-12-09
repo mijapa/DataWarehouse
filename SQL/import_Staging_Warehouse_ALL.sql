@@ -12,7 +12,7 @@ begin
                            "rodzaj_produktu",
                            "opis"
            FROM "STAGINGAREA"."produkt") spr
-    on (wpr."marka" = spr."marka" and wpr."model" = spr."model")
+    on (wpr."marka" = spr."marka" and wpr."model" = spr."model" and wpr."id_produktu" = spr."id_produktu")
     WHEN NOT MATCHED THEN
         INSERT ("id_produktu", "cena", "marza_zawarta_w_cenie", "marka", "model",
                 "producent", "kategoria", "rodzaj_produktu", "opis")
