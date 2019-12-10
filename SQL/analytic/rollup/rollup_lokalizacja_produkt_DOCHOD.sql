@@ -4,4 +4,3 @@ SELECT WHOUSE."sprzedaz_FAKT"."id_produktu",
 from WHOUSE."sprzedaz_FAKT"
 GROUP BY ROLLUP ("id_lokalizacji", "id_produktu")
 order by dochod desc;
-
