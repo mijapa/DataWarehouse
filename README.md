@@ -6,3 +6,6 @@ Creating Staging Area.
 Importing data from csv filest to Staging Area.
 Creating Warehouse.
 Importing data from Staging Area to Warehouse.
+Creating analytic requests.
+Creating materialized views.
+Add optimalizations.
