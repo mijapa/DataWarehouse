@@ -1,10 +1,20 @@
---PRODUKT
+/*drop table "produkt_STAGE";
+drop table "promocja_STAGE";
+drop table "sklep_STAGE";
+drop table "magazyn_STAGE";
+drop table "ekspozycja_STAGE";
+drop table "produkt_ekspozycja_STAGE";
+drop table "produkt_promocja_STAGE";
+drop table "transakcja_STAGE";
+drop table "sprzedany_produkt_STAGE";
+drop table "zwrot_STAGE";
+*/
+
 SET DEFINE OFF
-CREATE OR REPLACE DIRECTORY TEMP_DIR AS 'C:\app\zbd\staging-area\DR_STORE_DB_ZBD';
---GRANT READ ON DIRECTORY TEMP_DIR TO USER;
---GRANT WRITE ON DIRECTORY TEMP_DIR TO USER;
-drop table STAGINGAREA."produk_STAGE";
-CREATE TABLE STAGINGAREA."produk_STAGE"
+CREATE OR REPLACE DIRECTORY TEMP_DIR AS 'C:\app\zbd\staging-area\data';
+
+--PRODUKT
+CREATE TABLE "produkt_STAGE"
 ( "id_produktu" NUMBER(38) ,
   "model" VARCHAR2(100),
   "marka" VARCHAR2(100),
@@ -12,13 +22,14 @@ CREATE TABLE STAGINGAREA."produk_STAGE"
   "cena" NUMBER(38) ,
   "rodzaj_produktu" VARCHAR2(50) ,
   "kategoria" VARCHAR2(50) ,
+  "kraj_produkcji" VARCHAR2(100),
   "opis" VARCHAR2(500),
   "marza_zawarta_w_cenie" NUMBER(38) )
     ORGANIZATION EXTERNAL
     (  TYPE ORACLE_LOADER
         DEFAULT DIRECTORY TEMP_DIR
         ACCESS PARAMETERS
-        (records delimited BY '\r\n'
+        (records delimited BY '\n'
         NOBADFILE
         NODISCARDFILE
         NOLOGFILE
@@ -45,27 +56,24 @@ CREATE TABLE STAGINGAREA."produk_STAGE"
 
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO STAGINGAREA."produkt" ("id_produktu", "model", "marka", "producent", "cena", "rodzaj_produktu", "kategoria", "opis", "marza_zawarta_w_cenie")
-    SELECT "id_produktu", "model", "marka", "producent", "cena" * (SELECT "kurs_walut"."przelicznik" FROM STAGINGAREA."kurs_walut" WHERE "kurs_walut"."id_kursu" = 2), "rodzaj_produktu", "kategoria", "opis", "marza_zawarta_w_cenie" FROM STAGINGAREA."produk_STAGE" ;
+    INSERT INTO "produkt" ("id_produktu", "model", "marka", "producent", "cena", "rodzaj_produktu", "kategoria", "opis", "marza_zawarta_w_cenie")
+    SELECT "id_produktu", "model", "marka", "producent", "cena", "rodzaj_produktu", "kategoria", "opis", "marza_zawarta_w_cenie" FROM "produkt_STAGE" ;
     COMMIT;
-    EXECUTE IMMEDIATE 'DROP TABLE STAGINGAREA."produk_STAGE"';
+    EXECUTE IMMEDIATE 'DROP TABLE "produkt_STAGE"';
 end;
 /
 
 --PROMOCJA
-SET DEFINE OFF
-CREATE OR REPLACE DIRECTORY TEMP_DIR AS 'C:\app\zbd\staging-area\DR_STORE_DB_ZBD';
---GRANT READ ON DIRECTORY TEMP_DIR TO USER;
---GRANT WRITE ON DIRECTORY TEMP_DIR TO USER;
-drop table STAGINGAREA."promocj_STAGE";
-CREATE TABLE STAGINGAREA."promocj_STAGE"
+CREATE TABLE "promocja_STAGE"
 ( "id_promocji" NUMBER(38) ,
+  "opis" VARCHAR2(50),
+  "flaga" VARCHAR2(50),
   "procentowa_wysokosc_rabatu" NUMBER(38) )
     ORGANIZATION EXTERNAL
     (  TYPE ORACLE_LOADER
         DEFAULT DIRECTORY TEMP_DIR
         ACCESS PARAMETERS
-        (records delimited BY '\r\n'
+        (records delimited BY '\n'
         NOBADFILE
         NODISCARDFILE
         NOLOGFILE
@@ -75,8 +83,8 @@ CREATE TABLE STAGINGAREA."promocj_STAGE"
             lrtrim
             missing field VALUES are NULL
             ( "id_promocji" CHAR(4000),
-            "nazwa_formy_ekspozycji" CHAR(4000),
-            "flaga_aktywnego_rabatu" CHAR(4000),
+            "opis" CHAR(4000),
+            "flaga" CHAR(4000),
             "procentowa_wysokosc_rabatu" CHAR(4000)
             )
         )
@@ -86,24 +94,19 @@ CREATE TABLE STAGINGAREA."promocj_STAGE"
 
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO STAGINGAREA."promocja" ("id_promocji", "procentowa_wysokosc_rabatu")
-    SELECT "id_promocji", "procentowa_wysokosc_rabatu" FROM STAGINGAREA."promocj_STAGE" ;
+    INSERT INTO "promocja" ("id_promocji", "procentowa_wysokosc_rabatu")
+    SELECT "id_promocji", "procentowa_wysokosc_rabatu" FROM "promocja_STAGE" ;
     COMMIT;
-    EXECUTE IMMEDIATE 'DROP TABLE STAGINGAREA."promocj_STAGE"';
+    EXECUTE IMMEDIATE 'DROP TABLE "promocja_STAGE"';
 end;
 /
 
 --SKLEP
-SET DEFINE OFF
-CREATE OR REPLACE DIRECTORY TEMP_DIR AS 'C:\app\zbd\staging-area\DR_STORE_DB_ZBD';
---GRANT READ ON DIRECTORY TEMP_DIR TO USER;
---GRANT WRITE ON DIRECTORY TEMP_DIR TO USER;
-drop table STAGINGAREA."skle_STAGE";
-CREATE TABLE STAGINGAREA."skle_STAGE"
+CREATE TABLE "sklep_STAGE"
 ( "id_sklepu" NUMBER(38) ,
   "kod_pocztowy" VARCHAR2(100) ,
   "ulica" VARCHAR2(100) ,
-  "numer_lokalu" VARCHAR2(100) ,
+  "numer_lokalu" NUMBER(38),
   "miasto" VARCHAR2(100) ,
   "kraj" VARCHAR2(100) ,
   "odleglosc_od_centrum" VARCHAR2(100) ,
@@ -112,7 +115,7 @@ CREATE TABLE STAGINGAREA."skle_STAGE"
     (  TYPE ORACLE_LOADER
         DEFAULT DIRECTORY TEMP_DIR
         ACCESS PARAMETERS
-        (records delimited BY '\r\n'
+        (records delimited BY '\n'
         NOBADFILE
         NODISCARDFILE
         NOLOGFILE
@@ -121,13 +124,13 @@ CREATE TABLE STAGINGAREA."skle_STAGE"
             OPTIONALLY ENCLOSED BY '"' AND '"'
             lrtrim
             missing field VALUES are NULL
-            ( "id_sklepu" CHAR(4000),
-            "kod_pocztowy" CHAR(4000),
-            "ulica" CHAR(4000),
+            ( "id_sklepu" CHAR(4000) ,
+            "kod_pocztowy" CHAR(4000) ,
+            "ulica" CHAR(4000) ,
             "numer_lokalu" CHAR(4000),
-            "miasto" CHAR(4000),
-            "kraj" CHAR(4000),
-            "odleglosc_od_centrum" CHAR(4000),
+            "miasto" CHAR(4000) ,
+            "kraj" CHAR(4000) ,
+            "odleglosc_od_centrum" CHAR(4000) ,
             "ilosc_klientow_w_zasiegu" CHAR(4000)
             )
         )
@@ -137,19 +140,15 @@ CREATE TABLE STAGINGAREA."skle_STAGE"
 
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO STAGINGAREA."sklep" ("id_sklepu", "kraj", "powiat", "wojewodztwo", "miasto", "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu")
-    SELECT "id_sklepu", "kraj", "kod_pocztowy", "kod_pocztowy", "miasto", "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu" FROM STAGINGAREA."skle_STAGE" ;
+    INSERT INTO "sklep" ("id_sklepu", "wojewodztwo", "powiat", "miasto", "kraj", "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu")
+    SELECT "id_sklepu", "kod_pocztowy", "kod_pocztowy", "miasto", "kraj", "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu" FROM "sklep_STAGE" ;
     COMMIT;
-    EXECUTE IMMEDIATE 'DROP TABLE STAGINGAREA."skle_STAGE"';
+    EXECUTE IMMEDIATE 'DROP TABLE "sklep_STAGE"';
 end;
 /
+
 --MAGAZYN
-SET DEFINE OFF
-CREATE OR REPLACE DIRECTORY TEMP_DIR AS 'C:\app\zbd\staging-area\DR_STORE_DB_ZBD';
---GRANT READ ON DIRECTORY TEMP_DIR TO USER;
---GRANT WRITE ON DIRECTORY TEMP_DIR TO USER;
-drop table STAGINGAREA."magazy_STAGE";
-CREATE TABLE STAGINGAREA."magazy_STAGE"
+CREATE TABLE "magazyn_STAGE"
 ( "id_sklepu" NUMBER(38) ,
   "id_produktu" NUMBER(38) ,
   "ilosc_sztuk" NUMBER(38) ,
@@ -158,7 +157,7 @@ CREATE TABLE STAGINGAREA."magazy_STAGE"
     (  TYPE ORACLE_LOADER
         DEFAULT DIRECTORY TEMP_DIR
         ACCESS PARAMETERS
-        (records delimited BY '\r\n'
+        (records delimited BY '\n'
         NOBADFILE
         NODISCARDFILE
         NOLOGFILE
@@ -167,10 +166,10 @@ CREATE TABLE STAGINGAREA."magazy_STAGE"
             OPTIONALLY ENCLOSED BY '"' AND '"'
             lrtrim
             missing field VALUES are NULL
-            ( "id_produktu" CHAR(4000),
-            "id_sklepu" CHAR(4000),
-            "ilosc_sztuk" CHAR(4000),
-            "czas" CHAR(4000) date_format DATE mask "YYYY-MM-DD:HH24:MI:SS"
+            ( "id_sklepu" CHAR(4000) ,
+            "id_produktu" CHAR(4000) ,
+            "ilosc_sztuk" CHAR(4000) ,
+            "czas" CHAR (4000) date_format DATE mask "YYYY-MM-DD"
             )
         )
         LOCATION ('dr_stored_product.csv')
@@ -179,27 +178,24 @@ CREATE TABLE STAGINGAREA."magazy_STAGE"
 
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO STAGINGAREA."magazyn" ("id_sklepu", "id_produktu", "ilosc_sztuk", "czas")
-    SELECT "id_sklepu", "id_produktu", "ilosc_sztuk", "czas" FROM STAGINGAREA."magazy_STAGE" ;
+    INSERT INTO "magazyn" ("id_sklepu", "id_produktu", "ilosc_sztuk", "czas")
+    SELECT "id_sklepu", "id_produktu", "ilosc_sztuk", "czas" FROM "magazyn_STAGE" ;
     COMMIT;
-    EXECUTE IMMEDIATE 'DROP TABLE STAGINGAREA."magazy_STAGE"';
+    EXECUTE IMMEDIATE 'DROP TABLE "magazyn_STAGE"';
 end;
 /
 
 --EKSPOZYCJA
-SET DEFINE OFF
-CREATE OR REPLACE DIRECTORY TEMP_DIR AS 'C:\app\zbd\staging-area\DR_STORE_DB_ZBD';
---GRANT READ ON DIRECTORY TEMP_DIR TO USER;
---GRANT WRITE ON DIRECTORY TEMP_DIR TO USER;
-drop table STAGINGAREA."ekspozycj_STAGE";
-CREATE TABLE STAGINGAREA."ekspozycj_STAGE"
+CREATE TABLE "ekspozycja_STAGE"
 ( "id_ekspozycji" NUMBER(38) ,
-  "nazwa_formy_ekspozycji" NUMBER(38) )
+  "opis" VARCHAR2(50),
+  "flaga" VARCHAR2(50),
+  "procentowa_wysokosc_rabatu" NUMBER(38) )
     ORGANIZATION EXTERNAL
     (  TYPE ORACLE_LOADER
         DEFAULT DIRECTORY TEMP_DIR
         ACCESS PARAMETERS
-        (records delimited BY '\r\n'
+        (records delimited BY '\n'
         NOBADFILE
         NODISCARDFILE
         NOLOGFILE
@@ -208,8 +204,9 @@ CREATE TABLE STAGINGAREA."ekspozycj_STAGE"
             OPTIONALLY ENCLOSED BY '"' AND '"'
             lrtrim
             missing field VALUES are NULL
-            ( "id_ekspozycji" CHAR(4000),
-            "nazwa_formy_ekspozycji" CHAR(4000),
+            ( "id_ekspozycji" CHAR(4000) ,
+            "opis" CHAR(4000),
+            "flaga" CHAR(4000),
             "procentowa_wysokosc_rabatu" CHAR(4000)
             )
         )
@@ -219,20 +216,15 @@ CREATE TABLE STAGINGAREA."ekspozycj_STAGE"
 
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO STAGINGAREA."ekspozycja" ("id_ekspozycji", "nazwa_formy_ekspozycji")
-    SELECT "id_ekspozycji", "nazwa_formy_ekspozycji" FROM STAGINGAREA."ekspozycj_STAGE" ;
+    INSERT INTO "ekspozycja" ("id_ekspozycji", "nazwa_formy_ekspozycji")
+    SELECT "id_ekspozycji", "opis" FROM "ekspozycja_STAGE" ;
     COMMIT;
-    EXECUTE IMMEDIATE 'DROP TABLE STAGINGAREA."ekspozycj_STAGE"';
+    EXECUTE IMMEDIATE 'DROP TABLE "ekspozycja_STAGE"';
 end;
 /
 
 --PRODUKT_EKSPOZYCJA
-SET DEFINE OFF
-CREATE OR REPLACE DIRECTORY TEMP_DIR AS 'C:\app\zbd\staging-area\DR_STORE_DB_ZBD';
---GRANT READ ON DIRECTORY TEMP_DIR TO USER;
---GRANT WRITE ON DIRECTORY TEMP_DIR TO USER;
-drop table STAGINGAREA."produkt_ekspozycj_STAGE";
-CREATE TABLE STAGINGAREA."produkt_ekspozycj_STAGE"
+CREATE TABLE "produkt_ekspozycja_STAGE"
 ( "id_ekspozycji" NUMBER(38) ,
   "id_produktu" NUMBER(38) ,
   "data_rozpoczecia" TIMESTAMP ,
@@ -241,7 +233,7 @@ CREATE TABLE STAGINGAREA."produkt_ekspozycj_STAGE"
     (  TYPE ORACLE_LOADER
         DEFAULT DIRECTORY TEMP_DIR
         ACCESS PARAMETERS
-        (records delimited BY '\r\n'
+        (records delimited BY '\n'
         NOBADFILE
         NODISCARDFILE
         NOLOGFILE
@@ -252,8 +244,8 @@ CREATE TABLE STAGINGAREA."produkt_ekspozycj_STAGE"
             missing field VALUES are NULL
             ( "id_ekspozycji" CHAR(4000),
             "id_produktu" CHAR(4000),
-            "data_rozpoczecia" CHAR(4000) date_format DATE mask "YYYY-MM-DD:HH24:MI:SS",
-            "data_zakonczenia" CHAR(4000) date_format DATE mask "YYYY-MM-DD:HH24:MI:SS"
+            "data_rozpoczecia" CHAR(4000) date_format DATE mask "YYYY-MM-DD",
+            "data_zakonczenia" CHAR(4000) date_format DATE mask "YYYY-MM-DD"
             )
         )
         LOCATION ('dr_exposure_product.csv')
@@ -262,20 +254,15 @@ CREATE TABLE STAGINGAREA."produkt_ekspozycj_STAGE"
 
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO STAGINGAREA."produkt_ekspozycja" ("id_ekspozycji", "id_produktu", "data_rozpoczecia", "data_zakonczenia")
-    SELECT "id_ekspozycji", "id_produktu", "data_rozpoczecia", "data_zakonczenia" FROM STAGINGAREA."produkt_ekspozycj_STAGE" ;
+    INSERT INTO "produkt_ekspozycja" ("id_ekspozycji", "id_produktu", "data_rozpoczecia", "data_zakonczenia")
+    SELECT "id_ekspozycji", "id_produktu", "data_rozpoczecia", "data_zakonczenia" FROM "produkt_ekspozycja_STAGE" ;
     COMMIT;
-    EXECUTE IMMEDIATE 'DROP TABLE STAGINGAREA."produkt_ekspozycj_STAGE"';
+    EXECUTE IMMEDIATE 'DROP TABLE "produkt_ekspozycja_STAGE"';
 end;
 /
 
 --PRODUKT_PROMOCJA
-SET DEFINE OFF
-CREATE OR REPLACE DIRECTORY TEMP_DIR AS 'C:\app\zbd\staging-area\DR_STORE_DB_ZBD';
---GRANT READ ON DIRECTORY TEMP_DIR TO USER;
---GRANT WRITE ON DIRECTORY TEMP_DIR TO USER;
-drop table STAGINGAREA."produkt_promocj_STAGE";
-CREATE TABLE STAGINGAREA."produkt_promocj_STAGE"
+CREATE TABLE "produkt_promocja_STAGE"
 ( "id_promocji" NUMBER(38) ,
   "id_produktu" NUMBER(38) ,
   "data_rozpoczecia" TIMESTAMP ,
@@ -284,7 +271,7 @@ CREATE TABLE STAGINGAREA."produkt_promocj_STAGE"
     (  TYPE ORACLE_LOADER
         DEFAULT DIRECTORY TEMP_DIR
         ACCESS PARAMETERS
-        (records delimited BY '\r\n'
+        (records delimited BY '\n'
         NOBADFILE
         NODISCARDFILE
         NOLOGFILE
@@ -293,10 +280,10 @@ CREATE TABLE STAGINGAREA."produkt_promocj_STAGE"
             OPTIONALLY ENCLOSED BY '"' AND '"'
             lrtrim
             missing field VALUES are NULL
-            ( "id_produktu" CHAR(4000),
-            "id_promocji" CHAR(4000),
-            "data_rozpoczecia" CHAR(4000) date_format DATE mask "YYYY-MM-DD:HH24:MI:SS",
-            "data_zakonczenia" CHAR(4000) date_format DATE mask "YYYY-MM-DD:HH24:MI:SS"
+            ( "id_promocji" CHAR(4000),
+            "id_produktu" CHAR(4000),
+            "data_rozpoczecia" CHAR(4000) date_format DATE mask "YYYY-MM-DD",
+            "data_zakonczenia" CHAR(4000) date_format DATE mask "YYYY-MM-DD"
             )
         )
         LOCATION ('dr_exposure_product.csv')
@@ -305,20 +292,16 @@ CREATE TABLE STAGINGAREA."produkt_promocj_STAGE"
 
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO STAGINGAREA."produkt_promocja" ("id_promocji", "id_produktu", "data_rozpoczecia", "data_zakonczenia")
-    SELECT "id_promocji", "id_produktu", "data_rozpoczecia", "data_zakonczenia" FROM STAGINGAREA."produkt_promocj_STAGE" ;
+    INSERT INTO "produkt_promocja" ("id_promocji", "id_produktu", "data_rozpoczecia", "data_zakonczenia")
+    SELECT "id_promocji", "id_produktu", "data_rozpoczecia", "data_zakonczenia" FROM "produkt_promocja_STAGE" ;
     COMMIT;
-    EXECUTE IMMEDIATE 'DROP TABLE STAGINGAREA."produkt_promocj_STAGE"';
+    EXECUTE IMMEDIATE 'DROP TABLE "produkt_promocja_STAGE"';
 end;
 /
 
+
 --TRANSAKCJA
-SET DEFINE OFF
-CREATE OR REPLACE DIRECTORY TEMP_DIR AS 'C:\app\zbd\staging-area\DR_STORE_DB_ZBD';
---GRANT READ ON DIRECTORY TEMP_DIR TO USER;
---GRANT WRITE ON DIRECTORY TEMP_DIR TO USER;
-drop table STAGINGAREA."transakcj_STAGE";
-CREATE TABLE STAGINGAREA."transakcj_STAGE"
+CREATE TABLE "transakcja_STAGE"
 ( "id_transakcji" NUMBER(38) ,
   "id_sklepu" NUMBER(38) ,
   "rodzaj_platnosci" VARCHAR2(10) ,
@@ -327,7 +310,7 @@ CREATE TABLE STAGINGAREA."transakcj_STAGE"
     (  TYPE ORACLE_LOADER
         DEFAULT DIRECTORY TEMP_DIR
         ACCESS PARAMETERS
-        (records delimited BY '\r\n'
+        (records delimited BY '\n'
         NOBADFILE
         NODISCARDFILE
         NOLOGFILE
@@ -336,10 +319,10 @@ CREATE TABLE STAGINGAREA."transakcj_STAGE"
             OPTIONALLY ENCLOSED BY '"' AND '"'
             lrtrim
             missing field VALUES are NULL
-            ( "id_transakcji" CHAR(4000),
-            "id_sklepu" CHAR(4000),
-            "rodzaj_platnosci" CHAR(4000),
-            "czas" CHAR(4000) date_format DATE mask "YYYY-MM-DD:HH24:MI:SS"
+            ( "id_transakcji" CHAR(4000) ,
+            "id_sklepu" CHAR(4000) ,
+            "rodzaj_platnosci" CHAR(4000) ,
+            "czas" CHAR (4000) date_format DATE mask "YYYY-MM-DD:HH24:MI:SS"
             )
         )
         LOCATION ('dr_order.csv')
@@ -348,16 +331,15 @@ CREATE TABLE STAGINGAREA."transakcj_STAGE"
 
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO STAGINGAREA."transakcja" ("id_transakcji", "id_sklepu", "rodzaj_platnosci", "czas")
-    SELECT "id_transakcji", "id_sklepu", "rodzaj_platnosci", "czas" FROM STAGINGAREA."transakcj_STAGE" ;
+    INSERT INTO "transakcja" ("id_transakcji", "id_sklepu", "rodzaj_platnosci", "czas")
+    SELECT "id_transakcji", "id_sklepu", "rodzaj_platnosci", "czas" FROM "transakcja_STAGE" ;
     COMMIT;
-    EXECUTE IMMEDIATE 'DROP TABLE STAGINGAREA."transakcj_STAGE"';
+    EXECUTE IMMEDIATE 'DROP TABLE "transakcja_STAGE"';
 end;
 /
 
 --SPRZEDANY_PRODUKT
-SET DEFINE OFF
-CREATE TABLE STAGINGAREA."sprzedany_produk_STAGE"
+CREATE TABLE "sprzedany_produkt_STAGE"
 ( "id_produktu" NUMBER(38) ,
   "id_transakcji" NUMBER(38) ,
   "ilosc_sztuk" NUMBER(38) )
@@ -365,7 +347,7 @@ CREATE TABLE STAGINGAREA."sprzedany_produk_STAGE"
     (  TYPE ORACLE_LOADER
         DEFAULT DIRECTORY TEMP_DIR
         ACCESS PARAMETERS
-        (records delimited BY '\r\n'
+        (records delimited BY '\n'
         NOBADFILE
         NODISCARDFILE
         NOLOGFILE
@@ -375,7 +357,7 @@ CREATE TABLE STAGINGAREA."sprzedany_produk_STAGE"
             lrtrim
             missing field VALUES are NULL
             ( "id_produktu" CHAR(4000),
-            "id_transakcji" CHAR(4000),
+            "id_transakcji" CHAR(4000) ,
             "ilosc_sztuk" CHAR(4000)
             )
         )
@@ -385,20 +367,15 @@ CREATE TABLE STAGINGAREA."sprzedany_produk_STAGE"
 
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO STAGINGAREA."sprzedany_produkt" ("id_produktu", "id_transakcji", "ilosc_sztuk")
-    SELECT "id_produktu", "id_transakcji", "ilosc_sztuk" FROM STAGINGAREA."sprzedany_produk_STAGE" ;
+    INSERT INTO "sprzedany_produkt" ("id_produktu", "id_transakcji", "ilosc_sztuk")
+    SELECT "id_produktu", "id_transakcji", "ilosc_sztuk" FROM "sprzedany_produkt_STAGE" ;
     COMMIT;
-    EXECUTE IMMEDIATE 'DROP TABLE STAGINGAREA."sprzedany_produk_STAGE"';
+    EXECUTE IMMEDIATE 'DROP TABLE "sprzedany_produkt_STAGE"';
 end;
 /
 
 --ZWROT
-SET DEFINE OFF
-CREATE OR REPLACE DIRECTORY TEMP_DIR AS 'C:\app\zbd\staging-area\DR_STORE_DB_ZBD';
---GRANT READ ON DIRECTORY TEMP_DIR TO USER;
---GRANT WRITE ON DIRECTORY TEMP_DIR TO USER;
-drop table STAGINGAREA."zwrot_STAGE";
-CREATE TABLE STAGINGAREA."zwrot_STAGE"
+CREATE TABLE "zwrot_STAGE"
 ( "id_produktu" NUMBER(38) ,
   "id_transakcji" NUMBER(38) ,
   "czas" TIMESTAMP ,
@@ -407,7 +384,7 @@ CREATE TABLE STAGINGAREA."zwrot_STAGE"
     (  TYPE ORACLE_LOADER
         DEFAULT DIRECTORY TEMP_DIR
         ACCESS PARAMETERS
-        (records delimited BY '\r\n'
+        (records delimited BY '\n'
         NOBADFILE
         NODISCARDFILE
         NOLOGFILE
@@ -416,8 +393,8 @@ CREATE TABLE STAGINGAREA."zwrot_STAGE"
             OPTIONALLY ENCLOSED BY '"' AND '"'
             lrtrim
             missing field VALUES are NULL
-            ( "id_produktu" CHAR(4000),
-            "id_transakcji" CHAR(4000),
+            ( "id_produktu"  CHAR(4000),
+            "id_transakcji"  CHAR(4000),
             "czas" CHAR(4000) date_format DATE mask "YYYY-MM-DD:HH24:MI:SS",
             "ilosc_sztuk" CHAR(4000)
             )
@@ -426,16 +403,16 @@ CREATE TABLE STAGINGAREA."zwrot_STAGE"
         )
         REJECT LIMIT UNLIMITED;
 
+select * from "zwrot_STAGE" ;
+
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO STAGINGAREA."zwrot" ("id_produktu", "id_transakcji", "czas", "ilosc_sztuk")
-    SELECT "id_produktu", "id_transakcji", "czas", "ilosc_sztuk" FROM STAGINGAREA."zwrot_STAGE" WHERE ROWNUM <= 100;
+    INSERT INTO "zwrot" ("id_produktu", "id_transakcji", "czas", "ilosc_sztuk")
+    SELECT "id_produktu", "id_transakcji", "czas", "ilosc_sztuk" FROM "zwrot_STAGE" ;
     COMMIT;
-    EXECUTE IMMEDIATE 'DROP TABLE STAGINGAREA."zwrot_STAGE"';
+    EXECUTE IMMEDIATE 'DROP TABLE "zwrot_STAGE"';
 end;
 /
-
-
 
 
 
