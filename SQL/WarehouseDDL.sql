@@ -46,7 +46,7 @@ CREATE TABLE "produkt_WYMIAR"
 
 CREATE TABLE "czas_WYMIAR"
 (
-    "id_czasu" numeric GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) NOT NULL,
+    "id_czasu" numeric GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) NOT NULL PRIMARY KEY,
     "kwadrans" numeric                                                            NOT NULL,
     "godzina"  numeric                                                            NOT NULL,
     "dzien"    numeric                                                            NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE "czas_WYMIAR"
     partition r_98 values less than (99),
     partition r_99 values less than (100)
 );
-create unique index czas_WYMIAR_id_czasu_idx on "czas_WYMIAR" ("id_czasu") local;
+create index czas_WYMIAR_id_czasu_idx on "czas_WYMIAR" ("rok") local;
 
 CREATE TABLE "promocja_WYMIAR"
 (
