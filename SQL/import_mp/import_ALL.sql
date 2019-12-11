@@ -1,7 +1,7 @@
 SET DEFINE OFF
 CREATE OR REPLACE DIRECTORY Stage AS '/vagrant';
---GRANT READ ON DIRECTORY Enter New Dir TO USER;
---GRANT WRITE ON DIRECTORY Enter New Dir TO USER;
+--GRANT READ ON DIRECTORY Stage TO stagingarea;
+--GRANT WRITE ON DIRECTORY Stage TO stagingarea;
 --drop table "ekspozycj_STAG";
 CREATE TABLE "ekspozycj_STAG"
 (
@@ -13,9 +13,9 @@ CREATE TABLE "ekspozycj_STAG"
         DEFAULT DIRECTORY Stage
         ACCESS PARAMETERS
         (records delimited BY '\n'
-        NOBADFILE
-        NODISCARDFILE
-        NOLOGFILE
+        BADFILE Stage:'bad.bad'
+        DISCARDFILE Stage:'dis.dis'
+        LOGFILE Stage:'log.log'
         skip 1
         fields terminated BY ','
             OPTIONALLY ENCLOSED BY '"' AND '"'
@@ -35,11 +35,19 @@ WHERE ROWNUM <= 5;
 
 whenever sqlerror exit rollback;
 begin
-    INSERT INTO "ekspozycja" ("id_ekspozycji", "nazwa_formy_ekspozycji")
-        SELECT "id_ekspozycji", "nazwa_formy_ekspozycji" FROM "ekspozycj_STAG";
+    MERGE INTO "ekspozycja" eksp
+    USING (
+        SELECT "id_ekspozycji", "nazwa_formy_ekspozycji"
+        FROM "ekspozycj_STAG"
+        where "id_ekspozycji" is not null
+          and "nazwa_formy_ekspozycji" is not null) stag
+    on (stag."id_ekspozycji" = eksp."id_ekspozycji")
+    when not matched then
+        insert ("id_ekspozycji", "nazwa_formy_ekspozycji")
+        values (stag."id_ekspozycji", stag."nazwa_formy_ekspozycji");
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "ekspozycj_STAG"';
-end;
+end ;
 /
 
 --drop table "produk_STAGE";
@@ -91,11 +99,20 @@ whenever sqlerror exit rollback;
 begin
     INSERT INTO "produkt" ("id_produktu", "opis", "producent", "marka", "model", "rodzaj_produktu", "kategoria", "cena",
                            "marza_zawarta_w_cenie")
-        SELECT "id_produktu", "opis", "producent", "marka", "model", "rodzaj_produktu", "kategoria", "cena" *
-                                                                                                     (SELECT STAGINGAREA."kurs_walut"."przelicznik"
-                                                                                                      from STAGINGAREA."kurs_walut"
-                                                                                                      where "waluta_z" like 'PLN'
-                                                                                                        and "id_kursu" = 0), "marza_zawarta_w_cenie" FROM "produk_STAGE";
+    SELECT "id_produktu",
+           "opis",
+           "producent",
+           "marka",
+           "model",
+           "rodzaj_produktu",
+           "kategoria",
+           "cena" *
+           (SELECT STAGINGAREA."kurs_walut"."przelicznik"
+            from STAGINGAREA."kurs_walut"
+            where "waluta_z" like 'PLN'
+              and "id_kursu" = 0),
+           "marza_zawarta_w_cenie"
+    FROM "produk_STAGE";
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "produk_STAGE"';
 end;
@@ -146,7 +163,8 @@ whenever sqlerror exit rollback;
 begin
     INSERT INTO "sklep" ("id_sklepu", "miasto", "powiat", "wojewodztwo", "kraj", "odleglosc_od_centrum",
                          "ilosc_klientow_w_zasiegu")
-        SELECT "id_sklepu", "miasto", "powiat", "wojewodztwo", "kraj", "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu" FROM "skle_STAGE";
+    SELECT "id_sklepu", "miasto", "powiat", "wojewodztwo", "kraj", "odleglosc_od_centrum", "ilosc_klientow_w_zasiegu"
+    FROM "skle_STAGE";
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "skle_STAGE"';
 end;
@@ -194,7 +212,8 @@ WHERE ROWNUM <= 5;
 whenever sqlerror exit rollback;
 begin
     INSERT INTO "transakcja" ("id_transakcji", "id_sklepu", "czas", "rodzaj_platnosci")
-        SELECT "id_transakcji", "id_sklepu", "czas", "rodzaj_platnosci" FROM "transakcj_STAGE";
+    SELECT "id_transakcji", "id_sklepu", "czas", "rodzaj_platnosci"
+    FROM "transakcj_STAGE";
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "transakcj_STAGE"';
 end;
@@ -234,7 +253,8 @@ WHERE ROWNUM <= 5;
 whenever sqlerror exit rollback;
 begin
     INSERT INTO "promocja" ("id_promocji", "procentowa_wysokosc_rabatu")
-        SELECT "id_promocji", "procentowa_wysokosc_rabatu" FROM "promocj_STAGE";
+    SELECT "id_promocji", "procentowa_wysokosc_rabatu"
+    FROM "promocj_STAGE";
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "promocj_STAGE"';
 end;
@@ -278,7 +298,8 @@ WHERE ROWNUM <= 5;
 whenever sqlerror exit rollback;
 begin
     INSERT INTO "produkt_promocja" ("id_produktu", "id_promocji", "data_rozpoczecia", "data_zakonczenia")
-        SELECT "id_produktu", "id_promocji", "data_rozpoczecia", "data_zakonczenia" FROM "produkt_promocj_STAGE";
+    SELECT "id_produktu", "id_promocji", "data_rozpoczecia", "data_zakonczenia"
+    FROM "produkt_promocj_STAGE";
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "produkt_promocj_STAGE"';
 end;
@@ -322,7 +343,8 @@ WHERE ROWNUM <= 5;
 whenever sqlerror exit rollback;
 begin
     INSERT INTO "produkt_ekspozycja" ("id_produktu", "id_ekspozycji", "data_rozpoczecia", "data_zakonczenia")
-        SELECT "id_produktu", "id_ekspozycji", "data_rozpoczecia", "data_zakonczenia" FROM "produkt_ekspozycj_STAGE";
+    SELECT "id_produktu", "id_ekspozycji", "data_rozpoczecia", "data_zakonczenia"
+    FROM "produkt_ekspozycj_STAGE";
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "produkt_ekspozycj_STAGE"';
 end;
@@ -364,7 +386,8 @@ WHERE ROWNUM <= 5;
 whenever sqlerror exit rollback;
 begin
     INSERT INTO "sprzedany_produkt" ("id_transakcji", "id_produktu", "ilosc_sztuk")
-        SELECT "id_transakcji", "id_produktu", "ilosc_sztuk" FROM "sprzedany_produk_STAGE";
+    SELECT "id_transakcji", "id_produktu", "ilosc_sztuk"
+    FROM "sprzedany_produk_STAGE";
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "sprzedany_produk_STAGE"';
 end;
@@ -412,7 +435,8 @@ WHERE ROWNUM <= 5;
 whenever sqlerror exit rollback;
 begin
     INSERT INTO "zwrot" ("id_produktu", "czas", "id_transakcji", "ilosc_sztuk")
-        SELECT "id_produktu", "czas", "id_transakcji", "ilosc_sztuk" FROM "zwro_STAGE";
+    SELECT "id_produktu", "czas", "id_transakcji", "ilosc_sztuk"
+    FROM "zwro_STAGE";
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "zwro_STAGE"';
 end;
@@ -456,7 +480,8 @@ WHERE ROWNUM <= 5;
 whenever sqlerror exit rollback;
 begin
     INSERT INTO "magazyn" ("id_sklepu", "id_produktu", "ilosc_sztuk", "czas")
-        SELECT "id_sklepu", "id_produktu", "ilosc_sztuk", "czas" FROM "magazy_STAGE";
+    SELECT "id_sklepu", "id_produktu", "ilosc_sztuk", "czas"
+    FROM "magazy_STAGE";
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "magazy_STAGE"';
 end;
