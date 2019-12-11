@@ -15,12 +15,12 @@ CREATE TABLE "sprzedaz_FAKT"
 
 CREATE TABLE "zwroty_FAKT"
 (
-    "id_produktu"                                  numeric NOT NULL,
-    "id_czasu"                                     numeric NOT NULL,
-    "id_transakcji"                                numeric NOT NULL,
-    "suma_dochodow_utraconych"                     numeric NOT NULL,
-    "suma_przychodow_utraconych"                   numeric NOT NULL,
-    "suma_ilosci_zwroconych_produktow"             numeric NOT NULL
+    "id_produktu"                      numeric NOT NULL,
+    "id_czasu"                         numeric NOT NULL,
+    "id_transakcji"                    numeric NOT NULL,
+    "suma_dochodow_utraconych"         numeric NOT NULL,
+    "suma_przychodow_utraconych"       numeric NOT NULL,
+    "suma_ilosci_zwroconych_produktow" numeric NOT NULL
 );
 
 CREATE TABLE "magazyn_FAKT"
@@ -46,13 +46,26 @@ CREATE TABLE "produkt_WYMIAR"
 
 CREATE TABLE "czas_WYMIAR"
 (
-    "id_czasu" numeric GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) NOT NULL PRIMARY KEY,
+    "id_czasu" numeric GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) NOT NULL,
     "kwadrans" numeric                                                            NOT NULL,
     "godzina"  numeric                                                            NOT NULL,
     "dzien"    numeric                                                            NOT NULL,
     "miesiac"  numeric                                                            NOT NULL,
     "rok"      numeric                                                            NOT NULL
+) partition by range ("rok")
+(
+    partition r_90 values less than (91),
+    partition r_91 values less than (92),
+    partition r_92 values less than (93),
+    partition r_93 values less than (94),
+    partition r_94 values less than (95),
+    partition r_95 values less than (96),
+    partition r_96 values less than (97),
+    partition r_97 values less than (98),
+    partition r_98 values less than (99),
+    partition r_99 values less than (100)
 );
+create unique index czas_WYMIAR_id_czasu_idx on "czas_WYMIAR" ("id_czasu") local;
 
 CREATE TABLE "promocja_WYMIAR"
 (
