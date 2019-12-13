@@ -243,17 +243,17 @@ begin
     COMMIT;
 
     MERGE INTO WHOUSE."sprzedaz_FAKT" sprzedaz_fakt
-    USING (SELECT distinct staging_sprzedany_produkt."id_produktu"                                          id_produktu,
-                           staging_sprzedany_produkt."id_transakcji"                                        id_transakcji,
-                           czas_wymiar_transakcja."id_czasu"                                                id_czasu_sprzedazy,
-                           promocja_wymiar."id_promocji"                                                    id_promocji,
-                           staging_transakcja."id_sklepu"                                                   id_lokalizacji,
-                           forma_wymiar."id_formy_ekspozycji"                                               id_formy_ekspozycji,
-                           przedzial_wymiar."id_przedzialu_cenowego"                                        id_przedzialu_cenowego,
-                           sposob_wymiar."id_sposobu_platnosci"                                             id_sposobu_platnosci,
-                           staging_sprzedany_produkt."ilosc_sztuk"                                          ilosc_zakupionych_produktow,
-                           staging_sprzedany_produkt."ilosc_sztuk" * produkt_wymiar."marza_zawarta_w_cenie" dochod,
-                           staging_sprzedany_produkt."ilosc_sztuk" * produkt_wymiar."cena"                  przychod
+    USING (SELECT distinct staging_sprzedany_produkt."id_produktu"                                               id_produktu,
+                           staging_sprzedany_produkt."id_transakcji"                                             id_transakcji,
+                           MAX(czas_wymiar_transakcja."id_czasu")                                                id_czasu_sprzedazy,
+                           MAX(promocja_wymiar."id_promocji")                                                    id_promocji,
+                           MAX(staging_transakcja."id_sklepu")                                                   id_lokalizacji,
+                           MAX(forma_wymiar."id_formy_ekspozycji")                                               id_formy_ekspozycji,
+                           MAX(przedzial_wymiar."id_przedzialu_cenowego")                                        id_przedzialu_cenowego,
+                           MAX(sposob_wymiar."id_sposobu_platnosci")                                             id_sposobu_platnosci,
+                           MAX(staging_sprzedany_produkt."ilosc_sztuk")                                          ilosc_zakupionych_produktow,
+                           MAX(staging_sprzedany_produkt."ilosc_sztuk" * produkt_wymiar."marza_zawarta_w_cenie") dochod,
+                           MAX(staging_sprzedany_produkt."ilosc_sztuk" * produkt_wymiar."cena")                  przychod
            FROM "STAGINGAREA"."sprzedany_produkt" staging_sprzedany_produkt
                     left join STAGINGAREA."transakcja" staging_transakcja
                               on (staging_transakcja."id_transakcji" = staging_sprzedany_produkt."id_transakcji")
@@ -311,7 +311,8 @@ begin
                                   (round(produkt_wymiar."cena" / 10) * 10 - 5) and
                                   przedzial_wymiar."koniec_przedzialu" = (round(produkt_wymiar."cena" / 10) * 10 + 5))
                     left join WHOUSE."sposob_platnosci_WYMIAR" sposob_wymiar
-                              on (sposob_wymiar."rodzaj" = staging_transakcja."rodzaj_platnosci")) sel
+                              on (sposob_wymiar."rodzaj" = staging_transakcja."rodzaj_platnosci")
+           group by staging_sprzedany_produkt."id_produktu", staging_sprzedany_produkt."id_transakcji") sel
     on (sprzedaz_fakt."id_transakcji" = sel.id_transakcji and sprzedaz_fakt."id_produktu" = sel.id_produktu)
     WHEN NOT MATCHED THEN
         INSERT ("id_produktu", "id_czasu", "id_transakcji", "id_promocji", "id_lokalizacji", "id_formy_ekspozycji",
