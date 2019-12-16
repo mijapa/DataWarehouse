@@ -1,4 +1,4 @@
-SELECT count(WHOUSE."sprzedaz_FAKT"."id_produktu") /*+ INDEX (BIT_RABAT_NAZWA_FORMY_LOKALIZACJA_ROK_PRODUKT_PRZEDZIAL_IDX) */
+SELECT count(WHOUSE."sprzedaz_FAKT"."id_produktu")
 from WHOUSE."sprzedaz_FAKT"
          left join WHOUSE."produkt_WYMIAR" on "sprzedaz_FAKT"."id_produktu" = "produkt_WYMIAR"."id_produktu"
          left join WHOUSE."lokalizacja_WYMIAR"

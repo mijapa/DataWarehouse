@@ -2,8 +2,7 @@
 -- grant create table to whouse;
 
 CREATE MATERIALIZED VIEW WHOUSE.ile_kupionych_z_danej_formy_ekspozycji
-            BUILD IMMEDIATE
-    REFRESH complete ON DEMAND
+    ENABLE QUERY REWRITE
 AS
 SELECT WHOUSE."sprzedaz_FAKT"."id_produktu",
        WHOUSE."forma_ekspozycji_WYMIAR"."id_formy_ekspozycji",
