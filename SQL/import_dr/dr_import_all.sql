@@ -57,7 +57,7 @@ CREATE TABLE "produkt_STAGE"
 whenever sqlerror exit rollback;
 begin
     INSERT INTO "produkt" ("id_produktu", "model", "marka", "producent", "cena", "rodzaj_produktu", "kategoria", "opis", "marza_zawarta_w_cenie")
-    SELECT "id_produktu", "model", "marka", "producent", "cena", "rodzaj_produktu", "kategoria", "opis", "marza_zawarta_w_cenie" FROM "produkt_STAGE" ;
+    SELECT "id_produktu", "model", "marka", "producent", "cena" * (select "kurs_walut"."przelicznik" from "kurs_walut" where "id_kursu" = 2), "rodzaj_produktu", "kategoria", "opis", "marza_zawarta_w_cenie" FROM "produkt_STAGE" ;
     COMMIT;
     EXECUTE IMMEDIATE 'DROP TABLE "produkt_STAGE"';
 end;
